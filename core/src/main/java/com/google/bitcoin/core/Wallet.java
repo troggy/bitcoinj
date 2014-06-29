@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 // To do list:
 //
@@ -3283,8 +3284,9 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
                 req.tx.shuffleOutputs();
 
             // Now sign the inputs, thus proving that we are entitled to redeem the connected outputs.
-            if (req.signInputs)
-                req.tx.signInputs(Transaction.SigHash.ALL, this, req.aesKey);
+            if (req.signInputs) {
+                signTransaction(req.tx, req.aesKey);
+            }
 
             // Check size.
             int size = req.tx.bitcoinSerialize().length;
@@ -3310,6 +3312,57 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         } finally {
             lock.unlock();
         }
+    }
+
+    private void signTransaction(Transaction tx, KeyParameter aesKey) {
+        // kkorenkov todo: SignData needs to be renamed to something more meaningful
+        Map<TransactionOutput, SignData> signData = new HashMap<TransactionOutput, SignData>();
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            TransactionInput txIn = tx.getInput(i);
+            TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
+            if (txOut == null) {
+                log.warn("Missing connected output, assuming input {} is already signed.", i);
+                continue;
+            }
+            try {
+                // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
+                // we sign missing pieces (to check this would require either assuming any signatures are signing
+                // standard output types or a way to get processed signatures out of script execution)
+                txIn.getScriptSig().correctlySpends(tx, i, txIn.getOutpoint().getConnectedOutput().getScriptPubKey(), true);
+                log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
+                continue;
+            } catch (ScriptException e) {
+                // Expected.
+            }
+            if (txIn.getScriptBytes().length != 0)
+                log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
+
+            signData.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
+        }
+        new SimpleTransactionSigner().signInputs(tx, signData);
+    }
+
+    private SignData getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
+        Script script = txOutpoint.getConnectedOutput().getScriptPubKey();
+        Script redeemScript = null;
+        List<ECKey> keys = null;
+        if (script.isPayToScriptHash()) {
+            redeemScript = keychain.findRedeemScriptFromPubHash(script.getPubKeyHash());
+            // kkorenkov todo: teach KCG to return keys associated with each redeem script. Need to store SignData instead of Scripts
+            // in KeyCHainGroup.marriedKeysScripts
+            // keys =
+        } else if (script.isSentToAddress()) {
+            ECKey key = keychain.findKeyFromPubHash(script.getPubKeyHash()).maybeDecrypt(aesKey);
+            checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txOutpoint.getHash());
+            keys = ImmutableList.of(key);
+        } else if (script.isSentToRawPubKey()) {
+            ECKey key = keychain.findKeyFromPubKey(script.getPubKey()).maybeDecrypt(aesKey);
+            checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txOutpoint.getHash());
+            keys = ImmutableList.of(key);
+        } else {
+            throw new ScriptException("Could not understand form of connected output script: " + script);
+        }
+        return SignData.of(redeemScript, keys);
     }
 
     /** Reduce the value of the first output of a transaction to pay the given feePerKb as appropriate for its size. */
