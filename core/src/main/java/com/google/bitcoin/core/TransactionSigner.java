@@ -21,5 +21,5 @@ import java.util.Map;
  * //kkorenkov todo: javadocs
  */
 public interface TransactionSigner {
-   void signInputs(Transaction tx, Map<TransactionOutput, SignData> signData);
+   void signInputs(Transaction tx, Map<TransactionOutput, SigningAssembly> signData);
 }

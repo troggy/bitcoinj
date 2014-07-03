@@ -33,10 +33,10 @@ public class SimpleTransactionSigner implements TransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(SimpleTransactionSigner.class);
 
     @Override
-    public void signInputs(Transaction tx, Map<TransactionOutput, SignData> signData) {
-        for (SignData data : signData.values()) {
-            checkArgument(data.getRedeemScript() == null, "SimpleTransactionSigner doesn't work with P2SH transactions");
-            checkArgument(data.getKeys().size() == 1, "SimpleTransactionSigner doesn't work with multisig transactions");
+    public void signInputs(Transaction tx, Map<TransactionOutput, SigningAssembly> signingAssembly) {
+        for (SigningAssembly constituent : signingAssembly.values()) {
+            checkArgument(constituent.getRedeemScript() == null, "SimpleTransactionSigner doesn't work with P2SH transactions");
+            checkArgument(constituent.getKeys().size() == 1, "SimpleTransactionSigner doesn't work with multisig transactions");
         }
         int numInputs = tx.getInputs().size();
         TransactionSignature[] signatures = new TransactionSignature[numInputs];
@@ -62,8 +62,8 @@ public class SimpleTransactionSigner implements TransactionSigner {
             if (txIn.getScriptBytes().length != 0)
                 log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
             // Find the signing key we'll need to use.
-            checkArgument(signData.get(txOut).getKeys().size() == 1, "Should have exactly one key to sign");
-            ECKey key = signData.get(txOut).getKeys().get(0);
+            checkArgument(signingAssembly.get(txOut).getKeys().size() == 1, "Should have exactly one key to sign");
+            ECKey key = signingAssembly.get(txOut).getKeys().get(0);
             // This assert should never fire. If it does, it means the wallet is inconsistent.
             checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
             // Keep the key around for the script creation step below.
