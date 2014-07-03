@@ -60,7 +60,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.*;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 // To do list:
 //
@@ -203,6 +202,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
     // Object that performs risk analysis of received pending transactions. We might reject transactions that seem like
     // a high risk of being a double spending attack.
     private RiskAnalysis.Analyzer riskAnalyzer = DefaultRiskAnalysis.FACTORY;
+    private TransactionSigner signer;
 
     /**
      * Creates a new, empty wallet with no keys and no transactions. If you want to restore a wallet from disk instead,
@@ -230,6 +230,11 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
      */
     public static Wallet fromWatchingKey(NetworkParameters params, DeterministicKey watchKey) {
         return new Wallet(params, new KeyChainGroup(params, watchKey));
+    }
+    
+    public Wallet(NetworkParameters params, KeyChainGroup keyChainGroup, TransactionSigner signer) {
+        this(params, keyChainGroup);
+        this.signer = signer;
     }
 
     // TODO: When this class moves to the Wallet package, along with the protobuf serializer, then hide this.
@@ -3313,10 +3318,19 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             lock.unlock();
         }
     }
+    
+    public void signTransaction(Transaction tx, ECKey aesKey) {
+        lock.lock();
+        try{
+            signTransaction(tx, (KeyParameter)null);
+        } finally {
+            lock.unlock();
+        }        
+    }
 
     private void signTransaction(Transaction tx, KeyParameter aesKey) {
         // kkorenkov todo: SignData needs to be renamed to something more meaningful
-        Map<TransactionOutput, SignData> signData = new HashMap<TransactionOutput, SignData>();
+        Map<TransactionOutput, SigningAssembly> signingAssembly = new HashMap<TransactionOutput, SigningAssembly>();
         for (int i = 0; i < tx.getInputs().size(); i++) {
             TransactionInput txIn = tx.getInput(i);
             TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
@@ -3337,12 +3351,14 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             if (txIn.getScriptBytes().length != 0)
                 log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
 
-            signData.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
+            signingAssembly.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
         }
-        new SimpleTransactionSigner().signInputs(tx, signData);
+        if (signer==null)
+            signer = new SimpleTransactionSigner();
+        signer.signInputs(tx, signingAssembly);
     }
 
-    private SignData getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
+    private SigningAssembly getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
         Script script = txOutpoint.getConnectedOutput().getScriptPubKey();
         Script redeemScript = null;
         List<ECKey> keys = null;
@@ -3362,7 +3378,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         } else {
             throw new ScriptException("Could not understand form of connected output script: " + script);
         }
-        return SignData.of(redeemScript, keys);
+        return SigningAssembly.of(redeemScript, keys);
     }
 
     /** Reduce the value of the first output of a transaction to pay the given feePerKb as appropriate for its size. */
@@ -4246,7 +4262,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             }
             rekeyTx.getConfidence().setSource(TransactionConfidence.Source.SELF);
             rekeyTx.setPurpose(Transaction.Purpose.KEY_ROTATION);
-            rekeyTx.signInputs(Transaction.SigHash.ALL, this, aesKey);
+            signTransaction(rekeyTx, aesKey);
             // KeyTimeCoinSelector should never select enough inputs to push us oversize.
             checkState(rekeyTx.bitcoinSerialize().length < Transaction.MAX_STANDARD_TX_SIZE);
             return rekeyTx;
