@@ -76,7 +76,7 @@ public class KeyChainGroup {
 
     // The map holds P2SH redeem script and corresponding ECKeys issued by this KeyChainGroup (including lookahead)
     // mapped to their scriptPubKey hashes.
-    private LinkedHashMap<ByteString, SigningAssembly> marriedKeysScripts;
+    private LinkedHashMap<ByteString, RedeemData> marriedKeysScripts;
 
     private EnumMap<KeyChain.KeyPurpose, Address> currentAddresses;
     @Nullable private KeyCrypter keyCrypter;
@@ -155,7 +155,7 @@ public class KeyChainGroup {
         if (followingKeychains != null) {
             this.followingKeychains.putAll(followingKeychains);
         }
-        marriedKeysScripts = new LinkedHashMap<ByteString, SigningAssembly>();
+        marriedKeysScripts = new LinkedHashMap<ByteString, RedeemData>();
         maybeLookaheadScripts();
 
         if (!this.currentKeys.isEmpty()) {
@@ -182,7 +182,7 @@ public class KeyChainGroup {
         for (DeterministicKeyChain chain : chains) {
             if (isMarried(chain)) {
                 for (DeterministicKey followedKey : chain.getLeafKeys()) {
-                    SigningAssembly redeemData = getRedeemData(followedKey, chain.getWatchingKey());
+                    RedeemData redeemData = getRedeemData(followedKey, chain.getWatchingKey());
                     Script scriptPubKey = ScriptBuilder.createP2SHOutputScript(redeemData.getRedeemScript());
                     marriedKeysScripts.put(ByteString.copyFrom(scriptPubKey.getPubKeyHash()), redeemData);
                 }
@@ -426,7 +426,7 @@ public class KeyChainGroup {
      * Returns null if no such script found
      */
     @Nullable
-    public SigningAssembly findRedeemDataFromPubHash(byte[] payToScriptHash) {
+    public RedeemData findRedeemDataFromPubHash(byte[] payToScriptHash) {
         return marriedKeysScripts.get(ByteString.copyFrom(payToScriptHash));
     }
 
@@ -623,7 +623,7 @@ public class KeyChainGroup {
             filter.merge(basic.getFilter(size, falsePositiveRate, nTweak));
         for (DeterministicKeyChain chain : chains) {
             if (isMarried(chain)) {
-                for (Map.Entry<ByteString, SigningAssembly> entry : marriedKeysScripts.entrySet()) {
+                for (Map.Entry<ByteString, RedeemData> entry : marriedKeysScripts.entrySet()) {
                     filter.insert(entry.getKey().toByteArray());
                     filter.insert(ScriptBuilder.createP2SHOutputScript(entry.getValue().getRedeemScript()).getProgram());
                 }
@@ -647,10 +647,10 @@ public class KeyChainGroup {
         return ScriptBuilder.createP2SHOutputScript(getRedeemData(followedKey, followedAccountKey).getRedeemScript());
     }
 
-    private SigningAssembly getRedeemData(DeterministicKey followedKey, DeterministicKey followedAccountKey) {
+    private RedeemData getRedeemData(DeterministicKey followedKey, DeterministicKey followedAccountKey) {
         Collection<DeterministicKeyChain> followingChains = followingKeychains.get(followedAccountKey);
         List<ECKey> marriedKeys = getMarriedKeysWithFollowed(followedKey, followingChains);
-        return SigningAssembly.of(makeRedeemScript(marriedKeys), marriedKeys);
+        return RedeemData.of(makeRedeemScript(marriedKeys), marriedKeys);
     }
 
     private Script makeRedeemScript(List<ECKey> marriedKeys) {
@@ -863,8 +863,8 @@ public class KeyChainGroup {
                     builder2.append(String.format("Following chain:  %s%n", followingChain.getWatchingKey().serializePubB58()));
                 }
                 builder2.append(String.format("%n"));
-                for (SigningAssembly signData : marriedKeysScripts.values())
-                    formatScript(ScriptBuilder.createP2SHOutputScript(signData.getRedeemScript()), builder2);
+                for (RedeemData redeemData : marriedKeysScripts.values())
+                    formatScript(ScriptBuilder.createP2SHOutputScript(redeemData.getRedeemScript()), builder2);
             } else {
                 for (ECKey key : chain.getKeys())
                     formatKeyWithAddress(includePrivateKeys, key, builder2);

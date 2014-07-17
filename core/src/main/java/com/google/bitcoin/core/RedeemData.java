@@ -21,24 +21,26 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * SignatureAssembly is an object aggregating essentials to sign transactions.
+ * <p>This class aggregates data required to spend transaction output.</p>
+ *
+ * <p>Depending on type of output script it could contain:</p>
  *<ul>
- * <li><b>simple tx</b>a single key to sign</li>
- * <li><b>p2sh tx</b>uses a redeemscript to sign</li>
- * <li><b>multi-sig tx</b>uses multiple keys to sign</li>
+ * <li><b>pay-to-address or pay-to-pubkey tx</b> - a single key used to sign, no redeem script</li>
+ * <li><b>P2SH tx</b> - multiple keys and redeem script</li>
+ * <li><b>Multisig tx</b> - multiple keys, no redeem script</li>
  *</ul>
  */
-public class SigningAssembly {
+public class RedeemData {
     @Nullable private Script redeemScript;
     private List<ECKey> keys;
 
-    private SigningAssembly(Script redeemScript, List<ECKey> keys) {
+    private RedeemData(Script redeemScript, List<ECKey> keys) {
         this.redeemScript = redeemScript;
         this.keys = keys;
     }
 
-    public static SigningAssembly of(Script redeemScript, List<ECKey> keys) {
-        return new SigningAssembly(redeemScript, keys);
+    public static RedeemData of(Script redeemScript, List<ECKey> keys) {
+        return new RedeemData(redeemScript, keys);
     }
 
     @Nullable
