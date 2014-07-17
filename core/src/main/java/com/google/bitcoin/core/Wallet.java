@@ -795,7 +795,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
      * Returns null if no such data found
      */
     @Nullable
-    public SigningAssembly findRedeemDataFromPubHash(byte[] payToScriptHash) {
+    public RedeemData findRedeemDataFromPubHash(byte[] payToScriptHash) {
         lock.lock();
         try {
             return keychain.findRedeemDataFromPubHash(payToScriptHash);
@@ -3322,7 +3322,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
     public void signTransaction(Transaction tx, @Nullable KeyParameter aesKey) {
         lock.lock();
         try {
-            Map<TransactionOutput, SigningAssembly> signingAssembly = new HashMap<TransactionOutput, SigningAssembly>();
+            Map<TransactionOutput, RedeemData> redeemData = new HashMap<TransactionOutput, RedeemData>();
             for (int i = 0; i < tx.getInputs().size(); i++) {
                 TransactionInput txIn = tx.getInput(i);
                 TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
@@ -3343,25 +3343,25 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
                 if (txIn.getScriptBytes().length != 0)
                     log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
 
-                signingAssembly.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
+                redeemData.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
             }
             if (signer == null)
                 signer = new SimpleTransactionSigner();
-            signer.signInputs(tx, signingAssembly);
+            signer.signInputs(tx, redeemData);
         } finally {
             lock.unlock();
         }
     }
 
-    private SigningAssembly getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
+    private RedeemData getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
         Script script = txOutpoint.getConnectedOutput().getScriptPubKey();
-        SigningAssembly redeemData;
+        RedeemData redeemData;
         if (script.isPayToScriptHash()) {
             redeemData = keychain.findRedeemDataFromPubHash(script.getPubKeyHash());
         } else {
             ECKey key = getKeyForScript(script);
             checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txOutpoint.getHash());
-            redeemData = SigningAssembly.of(null, ImmutableList.of(key.maybeDecrypt(aesKey)));
+            redeemData = RedeemData.of(null, ImmutableList.of(key.maybeDecrypt(aesKey)));
         }
         return redeemData;
     }

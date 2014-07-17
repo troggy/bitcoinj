@@ -974,7 +974,7 @@ public class ECKey implements EncryptableItem, Serializable {
     }
 
     /**
-     * //kkorenkov todo: javadoc
+     * Creates decrypted private key if needed.
      */
     public ECKey maybeDecrypt(KeyParameter aesKey) throws KeyCrypterException {
         return isEncrypted() && aesKey != null ? decrypt(aesKey) : this;

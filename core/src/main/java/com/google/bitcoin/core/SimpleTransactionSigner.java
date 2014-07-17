@@ -27,14 +27,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * //kkorenkov todo: javadocs
+ * <p>{@link TransactionSigner} implementation for signing pay-to-address and pay-to-pubkey transaction inputs. It always
+ * uses {@link Transaction.SigHash#ALL} signing mode.</p>
+ *
+ * <p>This class expects single key to be provided for each TransactionOutput, otherwise it will throw an exception
+ * (as it isn't able to sign multisig or P2SH transaction inputs).
  */
 public class SimpleTransactionSigner implements TransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(SimpleTransactionSigner.class);
 
     @Override
-    public void signInputs(Transaction tx, Map<TransactionOutput, SigningAssembly> signingAssembly) {
-        for (SigningAssembly constituent : signingAssembly.values()) {
+    public void signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
+        for (RedeemData constituent : redeemData.values()) {
             checkArgument(constituent.getRedeemScript() == null, "SimpleTransactionSigner doesn't work with P2SH transactions");
             checkArgument(constituent.getKeys().size() == 1, "SimpleTransactionSigner doesn't work with multisig transactions");
         }
@@ -44,6 +48,7 @@ public class SimpleTransactionSigner implements TransactionSigner {
         for (int i = 0; i < numInputs; i++) {
             TransactionInput txIn = tx.getInput(i);
             TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
+            //kkorenkov todo: the checks below duplicate those in Wallet.signTransaction. Consider refactoring
             // We don't have the connected txOut, we assume it was signed already and move on
             if (txOut == null) {
                 log.warn("Missing connected txOut, assuming txIn {} is already signed.", i);
@@ -62,8 +67,8 @@ public class SimpleTransactionSigner implements TransactionSigner {
             if (txIn.getScriptBytes().length != 0)
                 log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
             // Find the signing key we'll need to use.
-            checkArgument(signingAssembly.get(txOut).getKeys().size() == 1, "Should have exactly one key to sign");
-            ECKey key = signingAssembly.get(txOut).getKeys().get(0);
+            checkArgument(redeemData.get(txOut).getKeys().size() == 1, "Should have exactly one key to sign");
+            ECKey key = redeemData.get(txOut).getKeys().get(0);
             // This assert should never fire. If it does, it means the wallet is inconsistent.
             checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
             // Keep the key around for the script creation step below.

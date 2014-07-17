@@ -18,8 +18,9 @@ package com.google.bitcoin.core;
 import java.util.Map;
 
 /**
- * //kkorenkov todo: javadocs
+ * <p>Implementations of this interface should sign provided transaction's inputs.</p>
+ * <p></p>
  */
 public interface TransactionSigner {
-   void signInputs(Transaction tx, Map<TransactionOutput, SigningAssembly> signData);
+   void signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData);
 }
