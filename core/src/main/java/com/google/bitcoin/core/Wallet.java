@@ -790,15 +790,15 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
     }
 
     /**
-     * <p>Locates a script from the KeyChainGroup given the script hash. This is needed when finding out which
-     * script we need to use to redeem a transaction output.</p>
-     * Returns null if no such script found
+     * <p>Locates redeem data (redeem script and corresponding keys) from the KeyChainGroup given the script hash.
+     * This is needed when finding out which script and keys we need to use to redeem a P2SH transaction output.</p>
+     * Returns null if no such data found
      */
     @Nullable
-    public Script findRedeemScriptFromPubHash(byte[] payToScriptHash) {
+    public SigningAssembly findRedeemDataFromPubHash(byte[] payToScriptHash) {
         lock.lock();
         try {
-            return keychain.findRedeemScriptFromPubHash(payToScriptHash);
+            return keychain.findRedeemDataFromPubHash(payToScriptHash);
         } finally {
             lock.unlock();
         }
@@ -807,7 +807,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
      * Returns true if this wallet knows the script corresponding to the given hash
      */
     public boolean isPayToScriptHashMine(byte[] payToScriptHash) {
-        return findRedeemScriptFromPubHash(payToScriptHash) != null;
+        return findRedeemDataFromPubHash(payToScriptHash) != null;
     }
 
     /**
@@ -3329,7 +3329,6 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
     }
 
     private void signTransaction(Transaction tx, KeyParameter aesKey) {
-        // kkorenkov todo: SignData needs to be renamed to something more meaningful
         Map<TransactionOutput, SigningAssembly> signingAssembly = new HashMap<TransactionOutput, SigningAssembly>();
         for (int i = 0; i < tx.getInputs().size(); i++) {
             TransactionInput txIn = tx.getInput(i);
@@ -3353,32 +3352,32 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
 
             signingAssembly.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
         }
-        if (signer==null)
+        if (signer == null)
             signer = new SimpleTransactionSigner();
         signer.signInputs(tx, signingAssembly);
     }
 
     private SigningAssembly getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
         Script script = txOutpoint.getConnectedOutput().getScriptPubKey();
-        Script redeemScript = null;
-        List<ECKey> keys = null;
+        SigningAssembly redeemData;
         if (script.isPayToScriptHash()) {
-            redeemScript = keychain.findRedeemScriptFromPubHash(script.getPubKeyHash());
-            // kkorenkov todo: teach KCG to return keys associated with each redeem script. Need to store SignData instead of Scripts
-            // in KeyCHainGroup.marriedKeysScripts
-            // keys =
-        } else if (script.isSentToAddress()) {
-            ECKey key = keychain.findKeyFromPubHash(script.getPubKeyHash()).maybeDecrypt(aesKey);
+            redeemData = keychain.findRedeemDataFromPubHash(script.getPubKeyHash());
+        } else {
+            ECKey key = getKeyForScript(script);
             checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txOutpoint.getHash());
-            keys = ImmutableList.of(key);
+            redeemData = SigningAssembly.of(null, ImmutableList.of(key.maybeDecrypt(aesKey)));
+        }
+        return redeemData;
+    }
+
+    private ECKey getKeyForScript(Script script) {
+        if (script.isSentToAddress()) {
+            return keychain.findKeyFromPubHash(script.getPubKeyHash());
         } else if (script.isSentToRawPubKey()) {
-            ECKey key = keychain.findKeyFromPubKey(script.getPubKey()).maybeDecrypt(aesKey);
-            checkNotNull(key, "Transaction exists in wallet that we cannot redeem: %s", txOutpoint.getHash());
-            keys = ImmutableList.of(key);
+            return keychain.findKeyFromPubKey(script.getPubKey());
         } else {
             throw new ScriptException("Could not understand form of connected output script: " + script);
         }
-        return SigningAssembly.of(redeemScript, keys);
     }
 
     /** Reduce the value of the first output of a transaction to pay the given feePerKb as appropriate for its size. */
@@ -4033,7 +4032,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
                     key = findKeyFromPubHash(script.getPubKeyHash());
                     checkNotNull(key, "Coin selection includes unspendable outputs");
                 } else if (script.isPayToScriptHash()) {
-                    redeemScript = keychain.findRedeemScriptFromPubHash(script.getPubKeyHash());
+                    redeemScript = keychain.findRedeemDataFromPubHash(script.getPubKeyHash()).getRedeemScript();
                     checkNotNull(redeemScript, "Coin selection includes unspendable outputs");
                 }
                 size += script.getNumberOfBytesRequiredToSpend(key, redeemScript);

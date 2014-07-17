@@ -74,8 +74,9 @@ public class KeyChainGroup {
     // The map keys are the watching keys of the followed chains and values are the following chains
     private Multimap<DeterministicKey, DeterministicKeyChain> followingKeychains;
 
-    // The map holds P2SH redeem scripts issued by this KeyChainGroup (including lookahead) mapped to their scriptPubKey hashes.
-    private LinkedHashMap<ByteString, Script> marriedKeysScripts;
+    // The map holds P2SH redeem script and corresponding ECKeys issued by this KeyChainGroup (including lookahead)
+    // mapped to their scriptPubKey hashes.
+    private LinkedHashMap<ByteString, SigningAssembly> marriedKeysScripts;
 
     private EnumMap<KeyChain.KeyPurpose, Address> currentAddresses;
     @Nullable private KeyCrypter keyCrypter;
@@ -154,7 +155,7 @@ public class KeyChainGroup {
         if (followingKeychains != null) {
             this.followingKeychains.putAll(followingKeychains);
         }
-        marriedKeysScripts = new LinkedHashMap<ByteString, Script>();
+        marriedKeysScripts = new LinkedHashMap<ByteString, SigningAssembly>();
         maybeLookaheadScripts();
 
         if (!this.currentKeys.isEmpty()) {
@@ -181,9 +182,9 @@ public class KeyChainGroup {
         for (DeterministicKeyChain chain : chains) {
             if (isMarried(chain)) {
                 for (DeterministicKey followedKey : chain.getLeafKeys()) {
-                    Script redeemScript = makeRedeemScript(followedKey, chain.getWatchingKey());
-                    Script scriptPubKey = ScriptBuilder.createP2SHOutputScript(redeemScript);
-                    marriedKeysScripts.put(ByteString.copyFrom(scriptPubKey.getPubKeyHash()), redeemScript);
+                    SigningAssembly redeemData = getRedeemData(followedKey, chain.getWatchingKey());
+                    Script scriptPubKey = ScriptBuilder.createP2SHOutputScript(redeemData.getRedeemScript());
+                    marriedKeysScripts.put(ByteString.copyFrom(scriptPubKey.getPubKeyHash()), redeemData);
                 }
             }
         }
@@ -421,11 +422,11 @@ public class KeyChainGroup {
     }
 
     /**
-     * <p>Returns redeem script for the given scriptPubKey hash.
+     * <p>Returns redeem data (redeem script and corresponding keys) for the given scriptPubKey hash.
      * Returns null if no such script found
      */
     @Nullable
-    public Script findRedeemScriptFromPubHash(byte[] payToScriptHash) {
+    public SigningAssembly findRedeemDataFromPubHash(byte[] payToScriptHash) {
         return marriedKeysScripts.get(ByteString.copyFrom(payToScriptHash));
     }
 
@@ -622,9 +623,9 @@ public class KeyChainGroup {
             filter.merge(basic.getFilter(size, falsePositiveRate, nTweak));
         for (DeterministicKeyChain chain : chains) {
             if (isMarried(chain)) {
-                for (Map.Entry<ByteString, Script> entry : marriedKeysScripts.entrySet()) {
+                for (Map.Entry<ByteString, SigningAssembly> entry : marriedKeysScripts.entrySet()) {
                     filter.insert(entry.getKey().toByteArray());
-                    filter.insert(ScriptBuilder.createP2SHOutputScript(entry.getValue()).getProgram());
+                    filter.insert(ScriptBuilder.createP2SHOutputScript(entry.getValue().getRedeemScript()).getProgram());
                 }
             } else {
                 filter.merge(chain.getFilter(size, falsePositiveRate, nTweak));
@@ -643,13 +644,13 @@ public class KeyChainGroup {
     }
 
     private Script makeP2SHOutputScript(DeterministicKey followedKey, DeterministicKey followedAccountKey) {
-        return ScriptBuilder.createP2SHOutputScript(makeRedeemScript(followedKey, followedAccountKey));
+        return ScriptBuilder.createP2SHOutputScript(getRedeemData(followedKey, followedAccountKey).getRedeemScript());
     }
 
-    private Script makeRedeemScript(DeterministicKey followedKey, DeterministicKey followedAccountKey) {
+    private SigningAssembly getRedeemData(DeterministicKey followedKey, DeterministicKey followedAccountKey) {
         Collection<DeterministicKeyChain> followingChains = followingKeychains.get(followedAccountKey);
         List<ECKey> marriedKeys = getMarriedKeysWithFollowed(followedKey, followingChains);
-        return makeRedeemScript(marriedKeys);
+        return SigningAssembly.of(makeRedeemScript(marriedKeys), marriedKeys);
     }
 
     private Script makeRedeemScript(List<ECKey> marriedKeys) {
@@ -862,8 +863,8 @@ public class KeyChainGroup {
                     builder2.append(String.format("Following chain:  %s%n", followingChain.getWatchingKey().serializePubB58()));
                 }
                 builder2.append(String.format("%n"));
-                for (Script script : marriedKeysScripts.values())
-                    formatScript(ScriptBuilder.createP2SHOutputScript(script), builder2);
+                for (SigningAssembly signData : marriedKeysScripts.values())
+                    formatScript(ScriptBuilder.createP2SHOutputScript(signData.getRedeemScript()), builder2);
             } else {
                 for (ECKey key : chain.getKeys())
                     formatKeyWithAddress(includePrivateKeys, key, builder2);
