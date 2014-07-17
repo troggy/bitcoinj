@@ -3318,43 +3318,39 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             lock.unlock();
         }
     }
-    
-    public void signTransaction(Transaction tx, ECKey aesKey) {
+
+    public void signTransaction(Transaction tx, @Nullable KeyParameter aesKey) {
         lock.lock();
-        try{
-            signTransaction(tx, (KeyParameter)null);
+        try {
+            Map<TransactionOutput, SigningAssembly> signingAssembly = new HashMap<TransactionOutput, SigningAssembly>();
+            for (int i = 0; i < tx.getInputs().size(); i++) {
+                TransactionInput txIn = tx.getInput(i);
+                TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
+                if (txOut == null) {
+                    log.warn("Missing connected output, assuming input {} is already signed.", i);
+                    continue;
+                }
+                try {
+                    // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
+                    // we sign missing pieces (to check this would require either assuming any signatures are signing
+                    // standard output types or a way to get processed signatures out of script execution)
+                    txIn.getScriptSig().correctlySpends(tx, i, txIn.getOutpoint().getConnectedOutput().getScriptPubKey(), true);
+                    log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
+                    continue;
+                } catch (ScriptException e) {
+                    // Expected.
+                }
+                if (txIn.getScriptBytes().length != 0)
+                    log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
+
+                signingAssembly.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
+            }
+            if (signer == null)
+                signer = new SimpleTransactionSigner();
+            signer.signInputs(tx, signingAssembly);
         } finally {
             lock.unlock();
-        }        
-    }
-
-    private void signTransaction(Transaction tx, KeyParameter aesKey) {
-        Map<TransactionOutput, SigningAssembly> signingAssembly = new HashMap<TransactionOutput, SigningAssembly>();
-        for (int i = 0; i < tx.getInputs().size(); i++) {
-            TransactionInput txIn = tx.getInput(i);
-            TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
-            if (txOut == null) {
-                log.warn("Missing connected output, assuming input {} is already signed.", i);
-                continue;
-            }
-            try {
-                // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
-                // we sign missing pieces (to check this would require either assuming any signatures are signing
-                // standard output types or a way to get processed signatures out of script execution)
-                txIn.getScriptSig().correctlySpends(tx, i, txIn.getOutpoint().getConnectedOutput().getScriptPubKey(), true);
-                log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
-                continue;
-            } catch (ScriptException e) {
-                // Expected.
-            }
-            if (txIn.getScriptBytes().length != 0)
-                log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
-
-            signingAssembly.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
         }
-        if (signer == null)
-            signer = new SimpleTransactionSigner();
-        signer.signInputs(tx, signingAssembly);
     }
 
     private SigningAssembly getDataRequiredToSpend(TransactionOutPoint txOutpoint, KeyParameter aesKey) {
