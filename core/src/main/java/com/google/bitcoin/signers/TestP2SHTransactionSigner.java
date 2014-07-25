@@ -40,7 +40,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  * This signer tries to sign inputs with keys it has. If key has no private bytes, signers asks mock server
  * to provide signature. Mock server is an instance of https://github.com/troggy/bitcoinj-test-signer running on
  * localhost at port 8080.
- *  //todo: add N of M sigs support where N < M. Currently always creates M sigs
  */
 public class TestP2SHTransactionSigner implements TransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(TestP2SHTransactionSigner.class);
@@ -66,7 +65,9 @@ public class TestP2SHTransactionSigner implements TransactionSigner {
             Script redeemScript = redeemData.get(txOut).getRedeemScript();
             Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
             List<ECKey> keys = redeemData.get(txOut).getKeys();
-            for (int j = 0; j < keys.size(); j++) {
+            // no need to calculate all signatures for N of M transaction, we need only minimum number required to spend
+            int treshold = redeemScript.getNumberOfSignaturesRequiredToSpend();
+            for (int j = 0; j < treshold; j++) {
                 ECKey key = keys.get(j);
                 try {
                     signatures[i][j] = new TransactionSignature(key.sign(sighash), Transaction.SigHash.ALL, false);

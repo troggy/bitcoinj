@@ -449,23 +449,44 @@ public class Script {
     }
 
     /**
+     * Alias for <code>getNumberOfSignaturesRequiredToSpend(null)</code>
+     * @see #getNumberOfSignaturesRequiredToSpend(Script)
+     */
+    public int getNumberOfSignaturesRequiredToSpend() {
+        return getNumberOfSignaturesRequiredToSpend(null);
+    }
+
+    /**
+     * Returns number of signatures required to spend output represented by this script. For P2SH scripts a redeem script
+     * needs to be provided.
+     */
+    public int getNumberOfSignaturesRequiredToSpend(@Nullable Script redeemScript) {
+        if (isPayToScriptHash()) {
+            checkArgument(redeemScript != null, "P2SH script requires redeemScript to be spent");
+            return redeemScript.getNumberOfSignaturesRequiredToSpend();
+        } else if (isSentToMultiSig()) {
+            // for N of M CHECKMULTISIG script we will need N signatures to spend
+            ScriptChunk nChunk = chunks.get(0);
+            return Script.decodeFromOpN(nChunk.opcode);
+        } else if (isSentToAddress() || isSentToRawPubKey()) {
+            // pay-to-address and pay-to-pubkey require single sig
+            return 1;
+        } else {
+            throw new IllegalStateException("Unsupported script type");
+        }
+    }
+
+    /**
      * Returns number of bytes required to spend this script. It accepts optional ECKey and redeemScript that may
      * be required for certain types of script to estimate target size.
      */
     public int getNumberOfBytesRequiredToSpend(@Nullable ECKey pubKey, @Nullable Script redeemScript) {
         if (isPayToScriptHash()) {
             // scriptSig: <sig> [sig] [sig...] <redeemscript>
-            checkArgument(redeemScript != null, "P2SH script requires redeemScript to be spent");
-            // for N of M CHECKMULTISIG redeem script we will need N signatures to spend
-            ScriptChunk nChunk = redeemScript.getChunks().get(0);
-            int n = Script.decodeFromOpN(nChunk.opcode);
-            return n * SIG_SIZE + getProgram().length;
+            return getNumberOfSignaturesRequiredToSpend(redeemScript) * SIG_SIZE + getProgram().length;
         } else if (isSentToMultiSig()) {
             // scriptSig: OP_0 <sig> [sig] [sig...]
-            // for N of M CHECKMULTISIG script we will need N signatures to spend
-            ScriptChunk nChunk = chunks.get(0);
-            int n = Script.decodeFromOpN(nChunk.opcode);
-            return n * SIG_SIZE + 1;
+            return getNumberOfSignaturesRequiredToSpend() * SIG_SIZE + 1;
         } else if (isSentToRawPubKey()) {
             // scriptSig: <sig>
             return SIG_SIZE;
