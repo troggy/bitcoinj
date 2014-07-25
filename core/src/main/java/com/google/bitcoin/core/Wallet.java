@@ -18,10 +18,7 @@
 package com.google.bitcoin.core;
 
 import com.google.bitcoin.core.TransactionConfidence.ConfidenceType;
-import com.google.bitcoin.crypto.DeterministicKey;
-import com.google.bitcoin.crypto.KeyCrypter;
-import com.google.bitcoin.crypto.KeyCrypterException;
-import com.google.bitcoin.crypto.KeyCrypterScrypt;
+import com.google.bitcoin.crypto.*;
 import com.google.bitcoin.params.UnitTestParams;
 import com.google.bitcoin.script.Script;
 import com.google.bitcoin.script.ScriptBuilder;
@@ -202,7 +199,8 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
     // Object that performs risk analysis of received pending transactions. We might reject transactions that seem like
     // a high risk of being a double spending attack.
     private RiskAnalysis.Analyzer riskAnalyzer = DefaultRiskAnalysis.FACTORY;
-    private TransactionSigner signer;
+
+    private List<TransactionSigner> signers;
 
     /**
      * Creates a new, empty wallet with no keys and no transactions. If you want to restore a wallet from disk instead,
@@ -232,11 +230,6 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         return new Wallet(params, new KeyChainGroup(params, watchKey));
     }
     
-    public Wallet(NetworkParameters params, KeyChainGroup keyChainGroup, TransactionSigner signer) {
-        this(params, keyChainGroup);
-        this.signer = signer;
-    }
-
     // TODO: When this class moves to the Wallet package, along with the protobuf serializer, then hide this.
     /** For internal use only. */
     public Wallet(NetworkParameters params, KeyChainGroup keyChainGroup) {
@@ -254,6 +247,8 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         extensions = new HashMap<String, WalletExtension>();
         // Use a linked hash map to ensure ordering of event listeners is correct.
         confidenceChanged = new LinkedHashMap<Transaction, TransactionConfidence.Listener.ChangeReason>();
+        signers = new ArrayList<TransactionSigner>();
+        signers.add(new SimpleTransactionSigner());
         createTransientState();
     }
 
@@ -285,6 +280,10 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
 
     public NetworkParameters getNetworkParameters() {
         return params;
+    }
+
+    public void addTransactionSigner(TransactionSigner signer) {
+        signers.add(signer);
     }
 
     /******************************************************************************************************************/
@@ -3290,7 +3289,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
 
             // Now sign the inputs, thus proving that we are entitled to redeem the connected outputs.
             if (req.signInputs) {
-                signTransaction(req.tx, req.aesKey);
+                signTransaction(req.tx, Transaction.SigHash.ALL, req.aesKey);
             }
 
             // Check size.
@@ -3319,14 +3318,31 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         }
     }
 
-    public void signTransaction(Transaction tx, @Nullable KeyParameter aesKey) {
+    public void signTransaction(Transaction tx, Transaction.SigHash hashType, @Nullable KeyParameter aesKey) {
         lock.lock();
         try {
+            List<TransactionInput> inputs = tx.getInputs();
+            List<TransactionOutput> outputs = tx.getOutputs();
+            checkState(inputs.size() > 0);
+            checkState(outputs.size() > 0);
+
+            // I don't currently have an easy way to test other modes work, as the official client does not use them.
+            checkArgument(hashType == Transaction.SigHash.ALL, "Only SIGHASH_ALL is currently supported");
+
+            // The transaction is signed with the input scripts empty except for the input we are signing. In the case
+            // where addInput has been used to set up a new transaction, they are already all empty. The input being signed
+            // has to have the connected OUTPUT program in it when the hash is calculated!
+            //
+            // Note that each input may be claiming an output sent to a different key. So we have to look at the outputs
+            // to figure out which key to sign with.
+
             Map<TransactionOutput, RedeemData> redeemData = new HashMap<TransactionOutput, RedeemData>();
-            for (int i = 0; i < tx.getInputs().size(); i++) {
-                TransactionInput txIn = tx.getInput(i);
-                TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
-                if (txOut == null) {
+            for (int i = 0; i < inputs.size(); i++) {
+                TransactionInput input = inputs.get(i);
+                TransactionOutput output = input.getOutpoint().getConnectedOutput();
+
+                // We don't have the connected output, we assume it was signed already and move on
+                if (output == null) {
                     log.warn("Missing connected output, assuming input {} is already signed.", i);
                     continue;
                 }
@@ -3334,20 +3350,66 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
                     // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
                     // we sign missing pieces (to check this would require either assuming any signatures are signing
                     // standard output types or a way to get processed signatures out of script execution)
-                    txIn.getScriptSig().correctlySpends(tx, i, txIn.getOutpoint().getConnectedOutput().getScriptPubKey(), true);
+                    input.getScriptSig().correctlySpends(tx, i, output.getScriptPubKey(), true);
                     log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
                     continue;
                 } catch (ScriptException e) {
                     // Expected.
                 }
-                if (txIn.getScriptBytes().length != 0)
+                if (input.getScriptBytes().length != 0)
                     log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
 
-                redeemData.put(txOut, getDataRequiredToSpend(txIn.getOutpoint(), aesKey));
+                redeemData.put(output, getDataRequiredToSpend(input.getOutpoint(), aesKey));
             }
-            if (signer == null)
-                signer = new SimpleTransactionSigner();
-            signer.signInputs(tx, redeemData);
+
+            // nothing to sign
+            if (redeemData.size() == 0)
+                return;
+
+            TransactionSignature[][] signatures = null;
+            for (TransactionSigner signer : signers) {
+                try {
+                    log.debug("Trying out {} to sign tx.");
+                    signatures = signer.signInputs(tx, redeemData);
+                    break;
+                } catch (IllegalArgumentException e) {
+                    // nothing. Assuming signer is incompatible. Just proceed to the next signer
+                } catch (IllegalStateException e) {
+
+                }
+            }
+
+            if (signatures == null) {
+                throw new RuntimeException("No suitable TransactionSigner found");
+            }
+
+            // Now we have calculated each signature, go through and create the scripts. Reminder: the script consists:
+            // 1) For pay-to-address outputs: a signature (over a hash of the simplified transaction) and the complete
+            //    public key needed to sign for the connected output. The output script checks the provided pubkey hashes
+            //    to the address and then checks the signature.
+            // 2) For pay-to-key outputs: just a signature.
+            for (int i = 0; i < inputs.size(); i++) {
+                TransactionInput input = inputs.get(i);
+                final TransactionOutput connectedOutput = input.getOutpoint().getConnectedOutput();
+                if (!redeemData.containsKey(connectedOutput))
+                    continue;
+                checkNotNull(connectedOutput);  // Quiet static analysis: is never null here but cannot be statically proven
+                Script scriptPubKey = connectedOutput.getScriptPubKey();
+                if (scriptPubKey.isSentToAddress()) {
+                    input.setScriptSig(ScriptBuilder.createInputScript(signatures[i][0], redeemData.get(connectedOutput).getKeys().get(0)));
+                } else if (scriptPubKey.isSentToRawPubKey()) {
+                    input.setScriptSig(ScriptBuilder.createInputScript(signatures[i][0]));
+                } else if (scriptPubKey.isPayToScriptHash()) {
+                    Script redeemScript = redeemData.get(connectedOutput).getRedeemScript();
+                    input.setScriptSig(ScriptBuilder.createP2SHMultiSigInputScript(Arrays.asList(signatures[i]), redeemScript.getProgram()));
+                } else {
+                    // Should be unreachable - if we don't recognize the type of script we're trying to sign for, we should
+                    // have failed above when fetching the key to sign with.
+                    throw new RuntimeException("Do not understand script type: " + scriptPubKey);
+                }
+            }
+
+            // Every input is now complete.
         } finally {
             lock.unlock();
         }
@@ -4257,7 +4319,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             }
             rekeyTx.getConfidence().setSource(TransactionConfidence.Source.SELF);
             rekeyTx.setPurpose(Transaction.Purpose.KEY_ROTATION);
-            signTransaction(rekeyTx, aesKey);
+            signTransaction(rekeyTx, Transaction.SigHash.ALL, aesKey);
             // KeyTimeCoinSelector should never select enough inputs to push us oversize.
             checkState(rekeyTx.bitcoinSerialize().length < Transaction.MAX_STANDARD_TX_SIZE);
             return rekeyTx;
