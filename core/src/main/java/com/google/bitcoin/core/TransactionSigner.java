@@ -15,12 +15,19 @@
  */
 package com.google.bitcoin.core;
 
+import com.google.bitcoin.crypto.TransactionSignature;
+
 import java.util.Map;
 
 /**
- * <p>Implementations of this interface should sign provided transaction's inputs.</p>
+ * <p>Implementations of this interface provide signatures for given transaction.</p>
  * <p></p>
  */
 public interface TransactionSigner {
-   void signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData);
+
+    /**
+     * Returns array of signatures for given transaction's inputs. Resulting array is made two-dimensional (array of tuples)
+     * to facilitate signing of P2SH inputs.
+     */
+    TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData);
 }
