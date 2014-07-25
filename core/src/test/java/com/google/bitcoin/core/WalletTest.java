@@ -100,14 +100,9 @@ public class WalletTest extends TestWithWallet {
         blockStore = new MemoryBlockStore(params);
         chain = new BlockChain(params, wallet, blockStore);
 
-        final byte[] ENTROPY = Sha256Hash.create("don't use a string seed like this in real life".getBytes()).getBytes();
-        DeterministicKeyChain keyChain = new DeterministicKeyChain(ENTROPY, "", 1389353062L);
-
-        //todo: get xpub from TransactionSigner
-        String xpub = keyChain.getWatchingKey().serializePubB58();
-        TransactionSigner signer = new TestP2SHTransactionSigner();
+        TestP2SHTransactionSigner signer = new TestP2SHTransactionSigner();
         wallet.addTransactionSigner(signer);
-        wallet.addFollowingAccountKeys(ImmutableList.of(DeterministicKey.deserializeB58(null, xpub)));
+        wallet.addFollowingAccountKeys(ImmutableList.of(signer.getPartnerWatchKey()));
     }
 
     @Test

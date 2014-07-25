@@ -30,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,10 +41,16 @@ import static com.google.common.base.Preconditions.checkArgument;
  * to provide signature. Mock server is an instance of https://github.com/troggy/bitcoinj-test-signer running on
  * localhost at port 8080.
  *  //todo: add N of M sigs support where N < M. Currently always creates M sigs
- *  //todo: vend partner's xpub for marriage purposes
  */
 public class TestP2SHTransactionSigner implements TransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(TestP2SHTransactionSigner.class);
+
+    public DeterministicKey getPartnerWatchKey() {
+        byte[] xpubBytes = new HttpClient().request("GET", "http://localhost:8080/signer/xpub", null);
+        DeterministicKey key = DeterministicKey.deserializeB58(null, new String(xpubBytes));
+        log.debug("Partner's watch key: {}", key);
+        return key;
+    }
 
     @Override
     public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
@@ -76,34 +83,53 @@ public class TestP2SHTransactionSigner implements TransactionSigner {
     }
 
     private ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
-        try {
-            URL url = new URL("http://localhost:8080/signer/sign");
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("sighash", sighash.toString());
+        params.put("keypath", ((DeterministicKey) theirKey).getPathAsString());
+        byte[] sig = new HttpClient().request("POST", "http://localhost:8080/signer/sign", params);
+        return ECKey.ECDSASignature.decodeFromDER(sig);
+    }
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
+    class HttpClient {
 
-            DataOutputStream writer = new DataOutputStream(connection.getOutputStream());
-            writer.writeBytes("sighash=" + URLEncoder.encode(sighash.toString(), "UTF-8")
-                    + "&keypath=" + URLEncoder.encode(((DeterministicKey) theirKey).getPathAsString(), "UTF-8"));
-            writer.close();
+        public byte[] request(String method, String urlString, Map<String, String> data) {
+            try {
+                URL url = new URL(urlString);
 
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                InputStream in = connection.getInputStream();
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod(method);
+
+                if (data != null && !data.isEmpty()) {
+                    connection.setDoOutput(true);
+                    DataOutputStream writer = new DataOutputStream(connection.getOutputStream());
+                    StringBuilder payload = new StringBuilder();
+                    for (Map.Entry<String, String> param : data.entrySet()) {
+                        if (payload.length() > 0)
+                            payload.append("&");
+                        payload.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), "UTF-8"));
+                    }
+                    writer.writeBytes(payload.toString());
+                    writer.close();
+                }
+
                 ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-                byte[] buf = new byte[1024];
-                int count;
-                while ((count = in.read(buf)) != -1)
-                    out.write(buf, 0, count);
-                return ECKey.ECDSASignature.decodeFromDER(out.toByteArray());
-            } else {
-                throw new RuntimeException("Couldn't get their's signature. Server responds with "
-                        + connection.getResponseCode() + " " + connection.getResponseMessage());
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    InputStream in = connection.getInputStream();
+                    byte[] buf = new byte[1024];
+                    int count;
+                    while ((count = in.read(buf)) != -1)
+                        out.write(buf, 0, count);
+                } else {
+                    throw new RuntimeException("Server responds with "
+                            + connection.getResponseCode() + " " + connection.getResponseMessage());
+                }
+                return out.toByteArray();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+
         }
     }
 }
