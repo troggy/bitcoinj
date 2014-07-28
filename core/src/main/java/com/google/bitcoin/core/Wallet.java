@@ -23,6 +23,8 @@ import com.google.bitcoin.params.UnitTestParams;
 import com.google.bitcoin.script.Script;
 import com.google.bitcoin.script.ScriptBuilder;
 import com.google.bitcoin.script.ScriptChunk;
+import com.google.bitcoin.signers.SimpleTransactionSigner;
+import com.google.bitcoin.signers.TransactionSigner;
 import com.google.bitcoin.store.UnreadableWalletException;
 import com.google.bitcoin.store.WalletProtobufSerializer;
 import com.google.bitcoin.utils.BaseTaggableObject;

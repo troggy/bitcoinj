@@ -17,8 +17,6 @@ package com.google.bitcoin.signers;
 
 import com.google.bitcoin.core.*;
 import com.google.bitcoin.crypto.DeterministicKey;
-import com.google.bitcoin.crypto.TransactionSignature;
-import com.google.bitcoin.script.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,17 +29,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- * This signer tries to sign inputs with keys it has. If key has no private bytes, signers asks mock server
+ * This signer tries to sign inputs with keys it has. If key has no private bytes, signer asks mock server
  * to provide signature. Mock server is an instance of https://github.com/troggy/bitcoinj-test-signer running on
  * localhost at port 8080.
  */
-public class TestP2SHTransactionSigner implements TransactionSigner {
+public class TestP2SHTransactionSigner extends P2SHTransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(TestP2SHTransactionSigner.class);
 
     public DeterministicKey getPartnerWatchKey() {
@@ -52,38 +47,7 @@ public class TestP2SHTransactionSigner implements TransactionSigner {
     }
 
     @Override
-    public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
-        int numInputs = tx.getInputs().size();
-        int numSigs = redeemData.values().iterator().next().getKeys().size();
-        TransactionSignature[][] signatures = new TransactionSignature[numInputs][numSigs];
-        for (int i = 0; i < numInputs; i++) {
-            TransactionInput txIn = tx.getInput(i);
-            TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
-            if (!redeemData.containsKey(txOut))
-                continue;
-            checkArgument(txOut.getScriptPubKey().isPayToScriptHash(), "TestP2SHTransactionSigner works only with P2SH transactions");
-            Script redeemScript = redeemData.get(txOut).getRedeemScript();
-            Sha256Hash sighash = tx.hashForSignature(i, redeemScript, Transaction.SigHash.ALL, false);
-            List<ECKey> keys = redeemData.get(txOut).getKeys();
-            // no need to calculate all signatures for N of M transaction, we need only minimum number required to spend
-            int treshold = redeemScript.getNumberOfSignaturesRequiredToSpend();
-            for (int j = 0; j < treshold; j++) {
-                ECKey key = keys.get(j);
-                try {
-                    signatures[i][j] = new TransactionSignature(key.sign(sighash), Transaction.SigHash.ALL, false);
-                } catch (ECKey.KeyIsEncryptedException e) {
-                    throw e;
-                } catch (ECKey.MissingPrivateKeyException e) {
-                    // if key has no private key bytes, we asking signing server to provide signature for it
-                    signatures[i][j] = new TransactionSignature(getTheirSignature(sighash, key), Transaction.SigHash.ALL, false);
-                }
-            }
-        }
-
-        return signatures;
-    }
-
-    private ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
+    protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("sighash", sighash.toString());
         params.put("keypath", ((DeterministicKey) theirKey).getPathAsString());

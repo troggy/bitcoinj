@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.bitcoin.core;
+package com.google.bitcoin.signers;
 
+import com.google.bitcoin.core.*;
 import com.google.bitcoin.crypto.TransactionSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * <p>{@link TransactionSigner} implementation for signing pay-to-address and pay-to-pubkey transaction inputs. It always
- * uses {@link Transaction.SigHash#ALL} signing mode.</p>
+ * uses {@link com.google.bitcoin.core.Transaction.SigHash#ALL} signing mode.</p>
  *
  * <p>This class expects single key to be provided for each TransactionOutput, otherwise it will throw an exception
  * (as it isn't able to sign multisig or P2SH transaction inputs).

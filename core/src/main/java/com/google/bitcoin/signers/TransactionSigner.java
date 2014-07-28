@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.bitcoin.core;
+package com.google.bitcoin.signers;
 
+import com.google.bitcoin.core.RedeemData;
+import com.google.bitcoin.core.Transaction;
+import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.crypto.TransactionSignature;
 
 import java.util.Map;
