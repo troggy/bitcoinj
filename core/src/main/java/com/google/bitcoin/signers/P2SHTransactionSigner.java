@@ -34,6 +34,12 @@ import static com.google.common.base.Preconditions.checkArgument;
  * </p>
  */
 public abstract class P2SHTransactionSigner implements TransactionSigner {
+
+    @Override
+    public boolean isReady() {
+        return true;
+    }
+
     @Override
     public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
         int numInputs = tx.getInputs().size();

@@ -29,6 +29,11 @@ import java.util.Map;
 public interface TransactionSigner {
 
     /**
+     * Returns true if this signer is ready to be used.
+     */
+    boolean isReady();
+
+    /**
      * Returns array of signatures for given transaction's inputs. Resulting array is made two-dimensional (array of tuples)
      * to facilitate signing of P2SH inputs.
      */

@@ -20,6 +20,7 @@ package com.google.bitcoin.core;
 import com.google.bitcoin.core.Wallet.SendRequest;
 import com.google.bitcoin.crypto.*;
 import com.google.bitcoin.signers.P2SHTransactionSigner;
+import com.google.bitcoin.signers.TransactionSigner;
 import com.google.bitcoin.store.BlockStoreException;
 import com.google.bitcoin.store.MemoryBlockStore;
 import com.google.bitcoin.store.WalletProtobufSerializer;
@@ -47,10 +48,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.SecureRandom;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2526,5 +2524,20 @@ public class WalletTest extends TestWithWallet {
         wallet.upgradeToDeterministic(aesKey);
         assertFalse(wallet.isDeterministicUpgradeRequired());
         wallet.freshReceiveKey();  // works.
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void shouldNotAddTransactionSignerThatIsNotReady() throws Exception {
+        wallet.addTransactionSigner(new TransactionSigner() {
+            @Override
+            public boolean isReady() {
+                return false;
+            }
+
+            @Override
+            public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
+                return new TransactionSignature[0][];
+            }
+        });
     }
 }
