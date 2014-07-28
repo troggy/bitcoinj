@@ -35,6 +35,11 @@ public class SimpleTransactionSigner implements TransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(SimpleTransactionSigner.class);
 
     @Override
+    public boolean isReady() {
+        return true;
+    }
+
+    @Override
     public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
         for (RedeemData constituent : redeemData.values()) {
             checkArgument(constituent.getRedeemScript() == null, "SimpleTransactionSigner doesn't work with P2SH transactions");
