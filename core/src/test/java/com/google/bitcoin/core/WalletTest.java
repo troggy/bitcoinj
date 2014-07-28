@@ -19,7 +19,7 @@ package com.google.bitcoin.core;
 
 import com.google.bitcoin.core.Wallet.SendRequest;
 import com.google.bitcoin.crypto.*;
-import com.google.bitcoin.signers.TestP2SHTransactionSigner;
+import com.google.bitcoin.signers.P2SHTransactionSigner;
 import com.google.bitcoin.store.BlockStoreException;
 import com.google.bitcoin.store.MemoryBlockStore;
 import com.google.bitcoin.store.WalletProtobufSerializer;
@@ -100,9 +100,19 @@ public class WalletTest extends TestWithWallet {
         blockStore = new MemoryBlockStore(params);
         chain = new BlockChain(params, wallet, blockStore);
 
-        TestP2SHTransactionSigner signer = new TestP2SHTransactionSigner();
+        final DeterministicKeyChain keyChain = new DeterministicKeyChain(new SecureRandom());
+        DeterministicKey partnerKey = keyChain.getWatchingKey();
+
+        P2SHTransactionSigner signer = new P2SHTransactionSigner() {
+            @Override
+            protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
+                ImmutableList<ChildNumber> keyPath = ((DeterministicKey) theirKey).getPath();
+                DeterministicKey key = keyChain.getKeyByPath(keyPath, true);
+                return key.sign(sighash);
+            }
+        };
         wallet.addTransactionSigner(signer);
-        wallet.addFollowingAccountKeys(ImmutableList.of(signer.getPartnerWatchKey()));
+        wallet.addFollowingAccountKeys(ImmutableList.of(partnerKey));
     }
 
     @Test
