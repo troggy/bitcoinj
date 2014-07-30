@@ -20,6 +20,7 @@ import com.google.bitcoin.crypto.DeterministicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -44,6 +45,21 @@ public class TestP2SHTransactionSigner extends P2SHTransactionSigner {
         DeterministicKey key = DeterministicKey.deserializeB58(null, new String(xpubBytes));
         log.debug("Partner's watch key: {}", key);
         return key;
+    }
+
+    @Override
+    public Class<? extends TransactionSignerFactory> getFactory() {
+        return new TransactionSignerFactory() {
+            @Override
+            public TransactionSigner createSigner(@Nullable byte[] data) {
+                return new TestP2SHTransactionSigner();
+            }
+        }.getClass();
+    }
+
+    @Override
+    public byte[] serialize() {
+        return new byte[0];
     }
 
     @Override

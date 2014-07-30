@@ -21,6 +21,7 @@ import com.google.bitcoin.core.Wallet.SendRequest;
 import com.google.bitcoin.crypto.*;
 import com.google.bitcoin.signers.P2SHTransactionSigner;
 import com.google.bitcoin.signers.TransactionSigner;
+import com.google.bitcoin.signers.TransactionSignerFactory;
 import com.google.bitcoin.store.BlockStoreException;
 import com.google.bitcoin.store.MemoryBlockStore;
 import com.google.bitcoin.store.WalletProtobufSerializer;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.params.KeyParameter;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -102,6 +104,17 @@ public class WalletTest extends TestWithWallet {
         DeterministicKey partnerKey = keyChain.getWatchingKey();
 
         P2SHTransactionSigner signer = new P2SHTransactionSigner() {
+
+            @Override
+            public Class<? extends TransactionSignerFactory> getFactory() {
+                return null;
+            }
+
+            @Override
+            public byte[] serialize() {
+                return new byte[0];
+            }
+
             @Override
             protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
                 ImmutableList<ChildNumber> keyPath = ((DeterministicKey) theirKey).getPath();
@@ -2524,16 +2537,54 @@ public class WalletTest extends TestWithWallet {
 
     @Test(expected = IllegalStateException.class)
     public void shouldNotAddTransactionSignerThatIsNotReady() throws Exception {
-        wallet.addTransactionSigner(new TransactionSigner() {
-            @Override
-            public boolean isReady() {
-                return false;
-            }
+        wallet.addTransactionSigner(new DummyTransactionSigner(false, null, null));
+    }
 
+    @Test
+    public void transactionSignersShouldBeSerializedAlongWithWallet() throws Exception {
+        byte[] testData = "data data".getBytes();
+        wallet.addTransactionSigner(new DummyTransactionSigner(true, new TransactionSignerFactory() {
             @Override
-            public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
-                return new TransactionSignature[0][];
+            public TransactionSigner createSigner(@Nullable byte[] data) {
+                return new DummyTransactionSigner(true, this, data);
             }
-        });
+        }, testData));
+        assertEquals(2, wallet.getTransactionSigners().size());
+        Protos.Wallet protos = new WalletProtobufSerializer().walletToProto(wallet);
+        wallet = new WalletProtobufSerializer().readWallet(params, null, protos);
+        assertEquals(2, wallet.getTransactionSigners().size());
+        assertEquals(testData, wallet.getTransactionSigners().get(1).serialize());
+    }
+
+    private static class DummyTransactionSigner implements TransactionSigner {
+        private boolean isReady;
+        private Class<? extends TransactionSignerFactory> factoryClass;
+        private byte[] data;
+
+        private DummyTransactionSigner(boolean ready, TransactionSignerFactory factory, byte[] data) {
+            this.isReady = ready;
+            this.factoryClass = factory.getClass();
+            this.data = data;
+        }
+
+        @Override
+        public boolean isReady() {
+            return isReady;
+        }
+
+        @Override
+        public Class<? extends TransactionSignerFactory> getFactory() {
+            return factoryClass;
+        }
+
+        @Override
+        public byte[] serialize() {
+            return data;
+        }
+
+        @Override
+        public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
+            return new TransactionSignature[0][];
+        }
     }
 }

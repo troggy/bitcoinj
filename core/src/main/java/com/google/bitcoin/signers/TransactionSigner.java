@@ -34,6 +34,13 @@ public interface TransactionSigner {
     boolean isReady();
 
     /**
+     * Returns a class of {@link TransactionSignerFactory} implementation which can be used to recreate this signer
+     */
+    Class<? extends TransactionSignerFactory> getFactory();
+
+    byte[] serialize();
+
+    /**
      * Returns array of signatures for given transaction's inputs. Resulting array is made two-dimensional (array of tuples)
      * to facilitate signing of P2SH inputs.
      */

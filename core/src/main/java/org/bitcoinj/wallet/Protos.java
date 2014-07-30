@@ -2271,7 +2271,7 @@ public final class Protos {
      *
      * <pre>
      * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-     * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+     * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
      * </pre>
      */
     boolean hasPublicKey();
@@ -2280,7 +2280,7 @@ public final class Protos {
      *
      * <pre>
      * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-     * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+     * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
      * </pre>
      */
     com.google.protobuf.ByteString getPublicKey();
@@ -2735,7 +2735,7 @@ public final class Protos {
      *
      * <pre>
      * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-     * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+     * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
      * </pre>
      */
     public boolean hasPublicKey() {
@@ -2746,7 +2746,7 @@ public final class Protos {
      *
      * <pre>
      * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-     * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+     * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
      * </pre>
      */
     public com.google.protobuf.ByteString getPublicKey() {
@@ -3500,7 +3500,7 @@ public final class Protos {
        *
        * <pre>
        * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-       * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+       * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
        * </pre>
        */
       public boolean hasPublicKey() {
@@ -3511,7 +3511,7 @@ public final class Protos {
        *
        * <pre>
        * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-       * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+       * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
        * </pre>
        */
       public com.google.protobuf.ByteString getPublicKey() {
@@ -3522,7 +3522,7 @@ public final class Protos {
        *
        * <pre>
        * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-       * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+       * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
        * </pre>
        */
       public Builder setPublicKey(com.google.protobuf.ByteString value) {
@@ -3539,7 +3539,7 @@ public final class Protos {
        *
        * <pre>
        * The public EC key derived from the private key. We allow both to be stored to avoid mobile clients having to
-       * do lots of slow EC math on startup. For DETERMINISTIC_ROOT_SEED and DETERMINISTIC_MNEMONIC entries this is missing.
+       * do lots of slow EC math on startup. For DETERMINISTIC_MNEMONIC entries this is missing.
        * </pre>
        */
       public Builder clearPublicKey() {
@@ -12510,6 +12510,659 @@ public final class Protos {
     // @@protoc_insertion_point(class_scope:wallet.Tag)
   }
 
+  public interface TransactionSignerOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string factory_class_name = 1;
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    boolean hasFactoryClassName();
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    java.lang.String getFactoryClassName();
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getFactoryClassNameBytes();
+
+    // optional bytes data = 2;
+    /**
+     * <code>optional bytes data = 2;</code>
+     *
+     * <pre>
+     * arbitrary data required for signer to function
+     * </pre>
+     */
+    boolean hasData();
+    /**
+     * <code>optional bytes data = 2;</code>
+     *
+     * <pre>
+     * arbitrary data required for signer to function
+     * </pre>
+     */
+    com.google.protobuf.ByteString getData();
+  }
+  /**
+   * Protobuf type {@code wallet.TransactionSigner}
+   *
+   * <pre>
+   **
+   * Data required to reconstruct TransactionSigner.
+   * </pre>
+   */
+  public static final class TransactionSigner extends
+      com.google.protobuf.GeneratedMessage
+      implements TransactionSignerOrBuilder {
+    // Use TransactionSigner.newBuilder() to construct.
+    private TransactionSigner(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private TransactionSigner(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final TransactionSigner defaultInstance;
+    public static TransactionSigner getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public TransactionSigner getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private TransactionSigner(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              factoryClassName_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              data_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.bitcoinj.wallet.Protos.internal_static_wallet_TransactionSigner_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.bitcoinj.wallet.Protos.internal_static_wallet_TransactionSigner_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.bitcoinj.wallet.Protos.TransactionSigner.class, org.bitcoinj.wallet.Protos.TransactionSigner.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<TransactionSigner> PARSER =
+        new com.google.protobuf.AbstractParser<TransactionSigner>() {
+      public TransactionSigner parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new TransactionSigner(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<TransactionSigner> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string factory_class_name = 1;
+    public static final int FACTORY_CLASS_NAME_FIELD_NUMBER = 1;
+    private java.lang.Object factoryClassName_;
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    public boolean hasFactoryClassName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    public java.lang.String getFactoryClassName() {
+      java.lang.Object ref = factoryClassName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          factoryClassName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string factory_class_name = 1;</code>
+     *
+     * <pre>
+     * fully qualified class name of TransactionSignerFactory implementation
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getFactoryClassNameBytes() {
+      java.lang.Object ref = factoryClassName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        factoryClassName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional bytes data = 2;
+    public static final int DATA_FIELD_NUMBER = 2;
+    private com.google.protobuf.ByteString data_;
+    /**
+     * <code>optional bytes data = 2;</code>
+     *
+     * <pre>
+     * arbitrary data required for signer to function
+     * </pre>
+     */
+    public boolean hasData() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional bytes data = 2;</code>
+     *
+     * <pre>
+     * arbitrary data required for signer to function
+     * </pre>
+     */
+    public com.google.protobuf.ByteString getData() {
+      return data_;
+    }
+
+    private void initFields() {
+      factoryClassName_ = "";
+      data_ = com.google.protobuf.ByteString.EMPTY;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasFactoryClassName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getFactoryClassNameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, data_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getFactoryClassNameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, data_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.bitcoinj.wallet.Protos.TransactionSigner parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.bitcoinj.wallet.Protos.TransactionSigner prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code wallet.TransactionSigner}
+     *
+     * <pre>
+     **
+     * Data required to reconstruct TransactionSigner.
+     * </pre>
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.bitcoinj.wallet.Protos.internal_static_wallet_TransactionSigner_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.bitcoinj.wallet.Protos.internal_static_wallet_TransactionSigner_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.bitcoinj.wallet.Protos.TransactionSigner.class, org.bitcoinj.wallet.Protos.TransactionSigner.Builder.class);
+      }
+
+      // Construct using org.bitcoinj.wallet.Protos.TransactionSigner.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        factoryClassName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        data_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.bitcoinj.wallet.Protos.internal_static_wallet_TransactionSigner_descriptor;
+      }
+
+      public org.bitcoinj.wallet.Protos.TransactionSigner getDefaultInstanceForType() {
+        return org.bitcoinj.wallet.Protos.TransactionSigner.getDefaultInstance();
+      }
+
+      public org.bitcoinj.wallet.Protos.TransactionSigner build() {
+        org.bitcoinj.wallet.Protos.TransactionSigner result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.bitcoinj.wallet.Protos.TransactionSigner buildPartial() {
+        org.bitcoinj.wallet.Protos.TransactionSigner result = new org.bitcoinj.wallet.Protos.TransactionSigner(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.factoryClassName_ = factoryClassName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.data_ = data_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.bitcoinj.wallet.Protos.TransactionSigner) {
+          return mergeFrom((org.bitcoinj.wallet.Protos.TransactionSigner)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.bitcoinj.wallet.Protos.TransactionSigner other) {
+        if (other == org.bitcoinj.wallet.Protos.TransactionSigner.getDefaultInstance()) return this;
+        if (other.hasFactoryClassName()) {
+          bitField0_ |= 0x00000001;
+          factoryClassName_ = other.factoryClassName_;
+          onChanged();
+        }
+        if (other.hasData()) {
+          setData(other.getData());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasFactoryClassName()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.bitcoinj.wallet.Protos.TransactionSigner parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.bitcoinj.wallet.Protos.TransactionSigner) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string factory_class_name = 1;
+      private java.lang.Object factoryClassName_ = "";
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public boolean hasFactoryClassName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public java.lang.String getFactoryClassName() {
+        java.lang.Object ref = factoryClassName_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          factoryClassName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getFactoryClassNameBytes() {
+        java.lang.Object ref = factoryClassName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          factoryClassName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public Builder setFactoryClassName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        factoryClassName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public Builder clearFactoryClassName() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        factoryClassName_ = getDefaultInstance().getFactoryClassName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string factory_class_name = 1;</code>
+       *
+       * <pre>
+       * fully qualified class name of TransactionSignerFactory implementation
+       * </pre>
+       */
+      public Builder setFactoryClassNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        factoryClassName_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional bytes data = 2;
+      private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>optional bytes data = 2;</code>
+       *
+       * <pre>
+       * arbitrary data required for signer to function
+       * </pre>
+       */
+      public boolean hasData() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional bytes data = 2;</code>
+       *
+       * <pre>
+       * arbitrary data required for signer to function
+       * </pre>
+       */
+      public com.google.protobuf.ByteString getData() {
+        return data_;
+      }
+      /**
+       * <code>optional bytes data = 2;</code>
+       *
+       * <pre>
+       * arbitrary data required for signer to function
+       * </pre>
+       */
+      public Builder setData(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        data_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bytes data = 2;</code>
+       *
+       * <pre>
+       * arbitrary data required for signer to function
+       * </pre>
+       */
+      public Builder clearData() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        data_ = getDefaultInstance().getData();
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:wallet.TransactionSigner)
+    }
+
+    static {
+      defaultInstance = new TransactionSigner(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:wallet.TransactionSigner)
+  }
+
   public interface WalletOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -12803,6 +13456,51 @@ public final class Protos {
      */
     org.bitcoinj.wallet.Protos.TagOrBuilder getTagsOrBuilder(
         int index);
+
+    // repeated .wallet.TransactionSigner transaction_signers = 17;
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner> 
+        getTransactionSignersList();
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    org.bitcoinj.wallet.Protos.TransactionSigner getTransactionSigners(int index);
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    int getTransactionSignersCount();
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    java.util.List<? extends org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder> 
+        getTransactionSignersOrBuilderList();
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder getTransactionSignersOrBuilder(
+        int index);
   }
   /**
    * Protobuf type {@code wallet.Wallet}
@@ -12958,6 +13656,14 @@ public final class Protos {
               tags_.add(input.readMessage(org.bitcoinj.wallet.Protos.Tag.PARSER, extensionRegistry));
               break;
             }
+            case 138: {
+              if (!((mutable_bitField0_ & 0x00004000) == 0x00004000)) {
+                transactionSigners_ = new java.util.ArrayList<org.bitcoinj.wallet.Protos.TransactionSigner>();
+                mutable_bitField0_ |= 0x00004000;
+              }
+              transactionSigners_.add(input.readMessage(org.bitcoinj.wallet.Protos.TransactionSigner.PARSER, extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -12980,6 +13686,9 @@ public final class Protos {
         }
         if (((mutable_bitField0_ & 0x00002000) == 0x00002000)) {
           tags_ = java.util.Collections.unmodifiableList(tags_);
+        }
+        if (((mutable_bitField0_ & 0x00004000) == 0x00004000)) {
+          transactionSigners_ = java.util.Collections.unmodifiableList(transactionSigners_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -13566,6 +14275,62 @@ public final class Protos {
       return tags_.get(index);
     }
 
+    // repeated .wallet.TransactionSigner transaction_signers = 17;
+    public static final int TRANSACTION_SIGNERS_FIELD_NUMBER = 17;
+    private java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner> transactionSigners_;
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    public java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner> getTransactionSignersList() {
+      return transactionSigners_;
+    }
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    public java.util.List<? extends org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder> 
+        getTransactionSignersOrBuilderList() {
+      return transactionSigners_;
+    }
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    public int getTransactionSignersCount() {
+      return transactionSigners_.size();
+    }
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    public org.bitcoinj.wallet.Protos.TransactionSigner getTransactionSigners(int index) {
+      return transactionSigners_.get(index);
+    }
+    /**
+     * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+     *
+     * <pre>
+     * transaction signers added to the wallet
+     * </pre>
+     */
+    public org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder getTransactionSignersOrBuilder(
+        int index) {
+      return transactionSigners_.get(index);
+    }
+
     private void initFields() {
       networkIdentifier_ = "";
       lastSeenBlockHash_ = com.google.protobuf.ByteString.EMPTY;
@@ -13581,6 +14346,7 @@ public final class Protos {
       description_ = "";
       keyRotationTime_ = 0L;
       tags_ = java.util.Collections.emptyList();
+      transactionSigners_ = java.util.Collections.emptyList();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -13623,6 +14389,12 @@ public final class Protos {
       }
       for (int i = 0; i < getTagsCount(); i++) {
         if (!getTags(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getTransactionSignersCount(); i++) {
+        if (!getTransactionSigners(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -13675,6 +14447,9 @@ public final class Protos {
       }
       for (int i = 0; i < tags_.size(); i++) {
         output.writeMessage(16, tags_.get(i));
+      }
+      for (int i = 0; i < transactionSigners_.size(); i++) {
+        output.writeMessage(17, transactionSigners_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -13740,6 +14515,10 @@ public final class Protos {
       for (int i = 0; i < tags_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(16, tags_.get(i));
+      }
+      for (int i = 0; i < transactionSigners_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(17, transactionSigners_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -13859,6 +14638,7 @@ public final class Protos {
           getEncryptionParametersFieldBuilder();
           getExtensionFieldBuilder();
           getTagsFieldBuilder();
+          getTransactionSignersFieldBuilder();
         }
       }
       private static Builder create() {
@@ -13918,6 +14698,12 @@ public final class Protos {
           bitField0_ = (bitField0_ & ~0x00002000);
         } else {
           tagsBuilder_.clear();
+        }
+        if (transactionSignersBuilder_ == null) {
+          transactionSigners_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00004000);
+        } else {
+          transactionSignersBuilder_.clear();
         }
         return this;
       }
@@ -14031,6 +14817,15 @@ public final class Protos {
           result.tags_ = tags_;
         } else {
           result.tags_ = tagsBuilder_.build();
+        }
+        if (transactionSignersBuilder_ == null) {
+          if (((bitField0_ & 0x00004000) == 0x00004000)) {
+            transactionSigners_ = java.util.Collections.unmodifiableList(transactionSigners_);
+            bitField0_ = (bitField0_ & ~0x00004000);
+          }
+          result.transactionSigners_ = transactionSigners_;
+        } else {
+          result.transactionSigners_ = transactionSignersBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -14209,6 +15004,32 @@ public final class Protos {
             }
           }
         }
+        if (transactionSignersBuilder_ == null) {
+          if (!other.transactionSigners_.isEmpty()) {
+            if (transactionSigners_.isEmpty()) {
+              transactionSigners_ = other.transactionSigners_;
+              bitField0_ = (bitField0_ & ~0x00004000);
+            } else {
+              ensureTransactionSignersIsMutable();
+              transactionSigners_.addAll(other.transactionSigners_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.transactionSigners_.isEmpty()) {
+            if (transactionSignersBuilder_.isEmpty()) {
+              transactionSignersBuilder_.dispose();
+              transactionSignersBuilder_ = null;
+              transactionSigners_ = other.transactionSigners_;
+              bitField0_ = (bitField0_ & ~0x00004000);
+              transactionSignersBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getTransactionSignersFieldBuilder() : null;
+            } else {
+              transactionSignersBuilder_.addAllMessages(other.transactionSigners_);
+            }
+          }
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -14250,6 +15071,12 @@ public final class Protos {
         }
         for (int i = 0; i < getTagsCount(); i++) {
           if (!getTags(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        for (int i = 0; i < getTransactionSignersCount(); i++) {
+          if (!getTransactionSigners(i).isInitialized()) {
             
             return false;
           }
@@ -16069,6 +16896,318 @@ public final class Protos {
         return tagsBuilder_;
       }
 
+      // repeated .wallet.TransactionSigner transaction_signers = 17;
+      private java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner> transactionSigners_ =
+        java.util.Collections.emptyList();
+      private void ensureTransactionSignersIsMutable() {
+        if (!((bitField0_ & 0x00004000) == 0x00004000)) {
+          transactionSigners_ = new java.util.ArrayList<org.bitcoinj.wallet.Protos.TransactionSigner>(transactionSigners_);
+          bitField0_ |= 0x00004000;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.bitcoinj.wallet.Protos.TransactionSigner, org.bitcoinj.wallet.Protos.TransactionSigner.Builder, org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder> transactionSignersBuilder_;
+
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner> getTransactionSignersList() {
+        if (transactionSignersBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(transactionSigners_);
+        } else {
+          return transactionSignersBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public int getTransactionSignersCount() {
+        if (transactionSignersBuilder_ == null) {
+          return transactionSigners_.size();
+        } else {
+          return transactionSignersBuilder_.getCount();
+        }
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public org.bitcoinj.wallet.Protos.TransactionSigner getTransactionSigners(int index) {
+        if (transactionSignersBuilder_ == null) {
+          return transactionSigners_.get(index);
+        } else {
+          return transactionSignersBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder setTransactionSigners(
+          int index, org.bitcoinj.wallet.Protos.TransactionSigner value) {
+        if (transactionSignersBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.set(index, value);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder setTransactionSigners(
+          int index, org.bitcoinj.wallet.Protos.TransactionSigner.Builder builderForValue) {
+        if (transactionSignersBuilder_ == null) {
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          transactionSignersBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder addTransactionSigners(org.bitcoinj.wallet.Protos.TransactionSigner value) {
+        if (transactionSignersBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.add(value);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder addTransactionSigners(
+          int index, org.bitcoinj.wallet.Protos.TransactionSigner value) {
+        if (transactionSignersBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.add(index, value);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder addTransactionSigners(
+          org.bitcoinj.wallet.Protos.TransactionSigner.Builder builderForValue) {
+        if (transactionSignersBuilder_ == null) {
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.add(builderForValue.build());
+          onChanged();
+        } else {
+          transactionSignersBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder addTransactionSigners(
+          int index, org.bitcoinj.wallet.Protos.TransactionSigner.Builder builderForValue) {
+        if (transactionSignersBuilder_ == null) {
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          transactionSignersBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder addAllTransactionSigners(
+          java.lang.Iterable<? extends org.bitcoinj.wallet.Protos.TransactionSigner> values) {
+        if (transactionSignersBuilder_ == null) {
+          ensureTransactionSignersIsMutable();
+          super.addAll(values, transactionSigners_);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder clearTransactionSigners() {
+        if (transactionSignersBuilder_ == null) {
+          transactionSigners_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00004000);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public Builder removeTransactionSigners(int index) {
+        if (transactionSignersBuilder_ == null) {
+          ensureTransactionSignersIsMutable();
+          transactionSigners_.remove(index);
+          onChanged();
+        } else {
+          transactionSignersBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public org.bitcoinj.wallet.Protos.TransactionSigner.Builder getTransactionSignersBuilder(
+          int index) {
+        return getTransactionSignersFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder getTransactionSignersOrBuilder(
+          int index) {
+        if (transactionSignersBuilder_ == null) {
+          return transactionSigners_.get(index);  } else {
+          return transactionSignersBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public java.util.List<? extends org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder> 
+           getTransactionSignersOrBuilderList() {
+        if (transactionSignersBuilder_ != null) {
+          return transactionSignersBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(transactionSigners_);
+        }
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public org.bitcoinj.wallet.Protos.TransactionSigner.Builder addTransactionSignersBuilder() {
+        return getTransactionSignersFieldBuilder().addBuilder(
+            org.bitcoinj.wallet.Protos.TransactionSigner.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public org.bitcoinj.wallet.Protos.TransactionSigner.Builder addTransactionSignersBuilder(
+          int index) {
+        return getTransactionSignersFieldBuilder().addBuilder(
+            index, org.bitcoinj.wallet.Protos.TransactionSigner.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .wallet.TransactionSigner transaction_signers = 17;</code>
+       *
+       * <pre>
+       * transaction signers added to the wallet
+       * </pre>
+       */
+      public java.util.List<org.bitcoinj.wallet.Protos.TransactionSigner.Builder> 
+           getTransactionSignersBuilderList() {
+        return getTransactionSignersFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.bitcoinj.wallet.Protos.TransactionSigner, org.bitcoinj.wallet.Protos.TransactionSigner.Builder, org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder> 
+          getTransactionSignersFieldBuilder() {
+        if (transactionSignersBuilder_ == null) {
+          transactionSignersBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.bitcoinj.wallet.Protos.TransactionSigner, org.bitcoinj.wallet.Protos.TransactionSigner.Builder, org.bitcoinj.wallet.Protos.TransactionSignerOrBuilder>(
+                  transactionSigners_,
+                  ((bitField0_ & 0x00004000) == 0x00004000),
+                  getParentForChildren(),
+                  isClean());
+          transactionSigners_ = null;
+        }
+        return transactionSignersBuilder_;
+      }
+
       // @@protoc_insertion_point(builder_scope:wallet.Wallet)
     }
 
@@ -16141,6 +17280,11 @@ public final class Protos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_wallet_Tag_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_wallet_TransactionSigner_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_wallet_TransactionSigner_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_wallet_Wallet_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -16206,21 +17350,24 @@ public final class Protos {
       "\022\014\n\001r\030\003 \001(\005:\0018\022\014\n\001p\030\004 \001(\005:\0011\"8\n\tExtensio",
       "n\022\n\n\002id\030\001 \002(\t\022\014\n\004data\030\002 \002(\014\022\021\n\tmandatory" +
       "\030\003 \002(\010\" \n\003Tag\022\013\n\003tag\030\001 \002(\t\022\014\n\004data\030\002 \002(\014" +
-      "\"\261\004\n\006Wallet\022\032\n\022network_identifier\030\001 \002(\t\022" +
-      "\034\n\024last_seen_block_hash\030\002 \001(\014\022\036\n\026last_se" +
-      "en_block_height\030\014 \001(\r\022!\n\031last_seen_block" +
-      "_time_secs\030\016 \001(\003\022\030\n\003key\030\003 \003(\0132\013.wallet.K" +
-      "ey\022(\n\013transaction\030\004 \003(\0132\023.wallet.Transac" +
-      "tion\022&\n\016watched_script\030\017 \003(\0132\016.wallet.Sc" +
-      "ript\022C\n\017encryption_type\030\005 \001(\0162\035.wallet.W" +
-      "allet.EncryptionType:\013UNENCRYPTED\0227\n\025enc",
-      "ryption_parameters\030\006 \001(\0132\030.wallet.Scrypt" +
-      "Parameters\022\022\n\007version\030\007 \001(\005:\0011\022$\n\textens" +
-      "ion\030\n \003(\0132\021.wallet.Extension\022\023\n\013descript" +
-      "ion\030\013 \001(\t\022\031\n\021key_rotation_time\030\r \001(\004\022\031\n\004" +
-      "tags\030\020 \003(\0132\013.wallet.Tag\";\n\016EncryptionTyp" +
-      "e\022\017\n\013UNENCRYPTED\020\001\022\030\n\024ENCRYPTED_SCRYPT_A" +
-      "ES\020\002B\035\n\023org.bitcoinj.walletB\006Protos"
+      "\"=\n\021TransactionSigner\022\032\n\022factory_class_n" +
+      "ame\030\001 \002(\t\022\014\n\004data\030\002 \001(\014\"\351\004\n\006Wallet\022\032\n\022ne" +
+      "twork_identifier\030\001 \002(\t\022\034\n\024last_seen_bloc" +
+      "k_hash\030\002 \001(\014\022\036\n\026last_seen_block_height\030\014" +
+      " \001(\r\022!\n\031last_seen_block_time_secs\030\016 \001(\003\022" +
+      "\030\n\003key\030\003 \003(\0132\013.wallet.Key\022(\n\013transaction" +
+      "\030\004 \003(\0132\023.wallet.Transaction\022&\n\016watched_s" +
+      "cript\030\017 \003(\0132\016.wallet.Script\022C\n\017encryptio",
+      "n_type\030\005 \001(\0162\035.wallet.Wallet.EncryptionT" +
+      "ype:\013UNENCRYPTED\0227\n\025encryption_parameter" +
+      "s\030\006 \001(\0132\030.wallet.ScryptParameters\022\022\n\007ver" +
+      "sion\030\007 \001(\005:\0011\022$\n\textension\030\n \003(\0132\021.walle" +
+      "t.Extension\022\023\n\013description\030\013 \001(\t\022\031\n\021key_" +
+      "rotation_time\030\r \001(\004\022\031\n\004tags\030\020 \003(\0132\013.wall" +
+      "et.Tag\0226\n\023transaction_signers\030\021 \003(\0132\031.wa" +
+      "llet.TransactionSigner\";\n\016EncryptionType" +
+      "\022\017\n\013UNENCRYPTED\020\001\022\030\n\024ENCRYPTED_SCRYPT_AE" +
+      "S\020\002B\035\n\023org.bitcoinj.walletB\006Protos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -16299,12 +17446,18 @@ public final class Protos {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_wallet_Tag_descriptor,
               new java.lang.String[] { "Tag", "Data", });
-          internal_static_wallet_Wallet_descriptor =
+          internal_static_wallet_TransactionSigner_descriptor =
             getDescriptor().getMessageTypes().get(12);
+          internal_static_wallet_TransactionSigner_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_wallet_TransactionSigner_descriptor,
+              new java.lang.String[] { "FactoryClassName", "Data", });
+          internal_static_wallet_Wallet_descriptor =
+            getDescriptor().getMessageTypes().get(13);
           internal_static_wallet_Wallet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_wallet_Wallet_descriptor,
-              new java.lang.String[] { "NetworkIdentifier", "LastSeenBlockHash", "LastSeenBlockHeight", "LastSeenBlockTimeSecs", "Key", "Transaction", "WatchedScript", "EncryptionType", "EncryptionParameters", "Version", "Extension", "Description", "KeyRotationTime", "Tags", });
+              new java.lang.String[] { "NetworkIdentifier", "LastSeenBlockHash", "LastSeenBlockHeight", "LastSeenBlockTimeSecs", "Key", "Transaction", "WatchedScript", "EncryptionType", "EncryptionParameters", "Version", "Extension", "Description", "KeyRotationTime", "Tags", "TransactionSigners", });
           return null;
         }
       };

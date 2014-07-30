@@ -20,6 +20,7 @@ import com.google.bitcoin.crypto.TransactionSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -37,6 +38,22 @@ public class SimpleTransactionSigner implements TransactionSigner {
     @Override
     public boolean isReady() {
         return true;
+    }
+
+    @Override
+    public Class<? extends TransactionSignerFactory> getFactory() {
+        return new TransactionSignerFactory() {
+
+            @Override
+            public TransactionSigner createSigner(@Nullable byte[] data) {
+                return new SimpleTransactionSigner();
+            }
+        }.getClass();
+    }
+
+    @Override
+    public byte[] serialize() {
+        return new byte[0];
     }
 
     @Override

@@ -22,6 +22,8 @@ import com.google.bitcoin.core.TransactionConfidence.ConfidenceType;
 import com.google.bitcoin.crypto.KeyCrypter;
 import com.google.bitcoin.crypto.KeyCrypterScrypt;
 import com.google.bitcoin.script.Script;
+import com.google.bitcoin.signers.TransactionSigner;
+import com.google.bitcoin.signers.TransactionSignerFactory;
 import com.google.bitcoin.wallet.KeyChainGroup;
 import com.google.bitcoin.wallet.WalletTransaction;
 import com.google.common.collect.Lists;
@@ -39,6 +41,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -189,6 +192,13 @@ public class WalletProtobufSerializer {
         for (Map.Entry<String, ByteString> entry : wallet.getTags().entrySet()) {
             Protos.Tag.Builder tag = Protos.Tag.newBuilder().setTag(entry.getKey()).setData(entry.getValue());
             walletBuilder.addTags(tag);
+        }
+
+        for (TransactionSigner signer : wallet.getTransactionSigners()) {
+            Protos.TransactionSigner.Builder protoSigner = Protos.TransactionSigner.newBuilder();
+            protoSigner.setFactoryClassName(signer.getFactory().getName());
+            protoSigner.setData(ByteString.copyFrom(signer.serialize()));
+            walletBuilder.addTransactionSigners(protoSigner);
         }
 
         // Populate the wallet version.
@@ -443,6 +453,19 @@ public class WalletProtobufSerializer {
 
         for (Protos.Tag tag : walletProto.getTagsList()) {
             wallet.setTag(tag.getTag(), tag.getData());
+        }
+
+        for (Protos.TransactionSigner signerProto : walletProto.getTransactionSignersList()) {
+            TransactionSignerFactory factory;
+            try {
+                Class clazz = Class.forName(signerProto.getFactoryClassName());
+                factory = (TransactionSignerFactory)clazz.newInstance();
+            } catch (Exception e) {
+                throw new UnreadableWalletException("Unable to create TransactionSignerFactory instance: "
+                        + signerProto.getFactoryClassName(), e);
+            }
+            TransactionSigner signer = factory.createSigner(signerProto.getData().toByteArray());
+            wallet.addTransactionSigner(signer);
         }
 
         if (walletProto.hasVersion()) {
