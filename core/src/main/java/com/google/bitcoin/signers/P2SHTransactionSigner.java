@@ -19,6 +19,7 @@ import com.google.bitcoin.core.*;
 import com.google.bitcoin.crypto.TransactionSignature;
 import com.google.bitcoin.script.Script;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 

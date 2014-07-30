@@ -39,6 +39,12 @@ public class SimpleTransactionSigner implements TransactionSigner {
         return true;
     }
 
+
+    @Override
+    public byte[] serialize() {
+        return new byte[0];
+    }
+
     @Override
     public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
         for (RedeemData constituent : redeemData.values()) {

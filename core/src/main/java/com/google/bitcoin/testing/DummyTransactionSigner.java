@@ -13,31 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.bitcoin.signers;
+package com.google.bitcoin.testing;
 
 import com.google.bitcoin.core.RedeemData;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.crypto.TransactionSignature;
+import com.google.bitcoin.signers.TransactionSigner;
 
 import java.util.Map;
 
-/**
- * <p>Implementations of this interface provide signatures for given transaction.</p>
- * <p></p>
- */
-public interface TransactionSigner {
+public class DummyTransactionSigner implements TransactionSigner {
+    private boolean isReady;
+    private byte[] data;
 
-    /**
-     * Returns true if this signer is ready to be used.
-     */
-    boolean isReady();
+    public DummyTransactionSigner(boolean ready, byte[] data) {
+        this.isReady = ready;
+        this.data = data;
+    }
 
-    byte[] serialize();
+    @Override
+    public boolean isReady() {
+        return isReady;
+    }
 
-    /**
-     * Returns array of signatures for given transaction's inputs. Resulting array is made two-dimensional (array of tuples)
-     * to facilitate signing of P2SH inputs.
-     */
-    TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData);
+    @Override
+    public byte[] serialize() {
+        return data;
+    }
+
+    @Override
+    public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
+        return new TransactionSignature[0][];
+    }
 }

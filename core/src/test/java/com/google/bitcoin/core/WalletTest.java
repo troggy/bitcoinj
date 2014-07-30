@@ -21,9 +21,11 @@ import com.google.bitcoin.core.Wallet.SendRequest;
 import com.google.bitcoin.crypto.*;
 import com.google.bitcoin.signers.P2SHTransactionSigner;
 import com.google.bitcoin.signers.TransactionSigner;
+import com.google.bitcoin.signers.TransactionSignerSerializer;
 import com.google.bitcoin.store.BlockStoreException;
 import com.google.bitcoin.store.MemoryBlockStore;
 import com.google.bitcoin.store.WalletProtobufSerializer;
+import com.google.bitcoin.testing.DummyTransactionSigner;
 import com.google.bitcoin.testing.FakeTxBuilder;
 import com.google.bitcoin.testing.MockTransactionBroadcaster;
 import com.google.bitcoin.testing.TestWithWallet;
@@ -48,7 +50,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -102,6 +107,12 @@ public class WalletTest extends TestWithWallet {
         DeterministicKey partnerKey = keyChain.getWatchingKey();
 
         P2SHTransactionSigner signer = new P2SHTransactionSigner() {
+
+            @Override
+            public byte[] serialize() {
+                return new byte[0];
+            }
+
             @Override
             protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
                 ImmutableList<ChildNumber> keyPath = ((DeterministicKey) theirKey).getPath();
@@ -2528,16 +2539,31 @@ public class WalletTest extends TestWithWallet {
 
     @Test(expected = IllegalStateException.class)
     public void shouldNotAddTransactionSignerThatIsNotReady() throws Exception {
-        wallet.addTransactionSigner(new TransactionSigner() {
+        wallet.addTransactionSigner(new DummyTransactionSigner(false, null));
+    }
+
+    @Test
+    public void transactionSignersShouldBeSerializedAlongWithWallet() throws Exception {
+        final byte[] testData = "data data".getBytes();
+        final TransactionSigner signer = new DummyTransactionSigner(true, testData);
+        TransactionSignerSerializer signerSerializer = new TransactionSignerSerializer() {
             @Override
-            public boolean isReady() {
-                return false;
+            public byte[] serializeWalletExtension() {
+                return signer.serialize();
             }
 
             @Override
-            public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
-                return new TransactionSignature[0][];
+            public void deserializeWalletExtension(Wallet containingWallet, byte[] data) throws Exception {
+                containingWallet.addTransactionSigner(new DummyTransactionSigner(true, testData));
             }
-        });
+        };
+        wallet.addExtension(signerSerializer);
+        wallet.addTransactionSigner(signer);
+        assertEquals(2, wallet.getTransactionSigners().size());
+        Protos.Wallet protos = new WalletProtobufSerializer().walletToProto(wallet);
+        wallet = new WalletProtobufSerializer().readWallet(params, new WalletExtension[] { signerSerializer }, protos);
+        assertEquals(2, wallet.getTransactionSigners().size());
+        assertEquals(testData, wallet.getTransactionSigners().get(1).serialize());
     }
+
 }

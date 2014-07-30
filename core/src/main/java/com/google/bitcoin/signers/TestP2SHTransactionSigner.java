@@ -15,7 +15,8 @@
  */
 package com.google.bitcoin.signers;
 
-import com.google.bitcoin.core.*;
+import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.crypto.DeterministicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,11 @@ public class TestP2SHTransactionSigner extends P2SHTransactionSigner {
         DeterministicKey key = DeterministicKey.deserializeB58(null, new String(xpubBytes));
         log.debug("Partner's watch key: {}", key);
         return key;
+    }
+
+    @Override
+    public byte[] serialize() {
+        return new byte[0];
     }
 
     @Override

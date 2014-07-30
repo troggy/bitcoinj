@@ -250,7 +250,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         // Use a linked hash map to ensure ordering of event listeners is correct.
         confidenceChanged = new LinkedHashMap<Transaction, TransactionConfidence.Listener.ChangeReason>();
         signers = new ArrayList<TransactionSigner>();
-        signers.add(new SimpleTransactionSigner());
+        addTransactionSigner(new SimpleTransactionSigner());
         createTransientState();
     }
 
@@ -289,6 +289,10 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             signers.add(signer);
         else
             throw new IllegalStateException("Signer instance is not ready to be added into Wallet: " + signer.getClass());
+    }
+
+    public List<TransactionSigner> getTransactionSigners() {
+        return signers;
     }
 
     /******************************************************************************************************************/
