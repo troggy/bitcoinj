@@ -19,7 +19,7 @@ package com.google.bitcoin.core;
 
 import com.google.bitcoin.core.Wallet.SendRequest;
 import com.google.bitcoin.crypto.*;
-import com.google.bitcoin.signers.P2SHTransactionSigner;
+import com.google.bitcoin.signers.CustomTransactionSigner;
 import com.google.bitcoin.signers.TransactionSigner;
 import com.google.bitcoin.signers.TransactionSignerSerializer;
 import com.google.bitcoin.store.BlockStoreException;
@@ -104,9 +104,9 @@ public class WalletTest extends TestWithWallet {
         chain = new BlockChain(params, wallet, blockStore);
 
         final DeterministicKeyChain keyChain = new DeterministicKeyChain(new SecureRandom());
-        DeterministicKey partnerKey = keyChain.getWatchingKey();
+        DeterministicKey partnerKey = DeterministicKey.deserializeB58(null, keyChain.getWatchingKey().serializePubB58());
 
-        P2SHTransactionSigner signer = new P2SHTransactionSigner() {
+        CustomTransactionSigner signer = new CustomTransactionSigner() {
 
             @Override
             public byte[] serialize() {
@@ -114,10 +114,10 @@ public class WalletTest extends TestWithWallet {
             }
 
             @Override
-            protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
-                ImmutableList<ChildNumber> keyPath = ((DeterministicKey) theirKey).getPath();
+            protected SignatureAndKey getSignature(Sha256Hash sighash, List<ChildNumber> derivationPath) {
+                ImmutableList<ChildNumber> keyPath = ImmutableList.copyOf(derivationPath);
                 DeterministicKey key = keyChain.getKeyByPath(keyPath, true);
-                return key.sign(sighash);
+                return new SignatureAndKey(key.sign(sighash), key.getPubOnly());
             }
         };
         wallet.addTransactionSigner(signer);

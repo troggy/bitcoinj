@@ -18,7 +18,10 @@
 package com.google.bitcoin.core;
 
 import com.google.bitcoin.core.TransactionConfidence.ConfidenceType;
-import com.google.bitcoin.crypto.*;
+import com.google.bitcoin.crypto.DeterministicKey;
+import com.google.bitcoin.crypto.KeyCrypter;
+import com.google.bitcoin.crypto.KeyCrypterException;
+import com.google.bitcoin.crypto.KeyCrypterScrypt;
 import com.google.bitcoin.params.UnitTestParams;
 import com.google.bitcoin.script.Script;
 import com.google.bitcoin.script.ScriptBuilder;
@@ -99,7 +102,7 @@ import static com.google.common.base.Preconditions.*;
  * {@link Wallet#autosaveToFile(java.io.File, long, java.util.concurrent.TimeUnit, com.google.bitcoin.wallet.WalletFiles.Listener)}
  * for more information about this.</p>
  */
-public class Wallet extends BaseTaggableObject implements Serializable, BlockChainListener, PeerFilterProvider, KeyBag {
+public class Wallet extends BaseTaggableObject implements Serializable, BlockChainListener, PeerFilterProvider, MultisigKeyBag {
     private static final Logger log = LoggerFactory.getLogger(Wallet.class);
     private static final long serialVersionUID = 2L;
     private static final int MINIMUM_BLOOM_DATA_LENGTH = 8;
@@ -250,7 +253,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         // Use a linked hash map to ensure ordering of event listeners is correct.
         confidenceChanged = new LinkedHashMap<Transaction, TransactionConfidence.Listener.ChangeReason>();
         signers = new ArrayList<TransactionSigner>();
-        addTransactionSigner(new SimpleTransactionSigner());
+        addTransactionSigner(new SimpleTransactionSigner(this));
         createTransientState();
     }
 
@@ -748,6 +751,17 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
         }
     }
 
+    @Nullable
+    @Override
+    public ECKey findPrivateKeyFromScriptHash(byte[] scriptHash) {
+        lock.lock();
+        try {
+            return keychain.findPrivateKeyFromScriptHash(scriptHash);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /** Returns true if the given key is in the wallet, false otherwise. Currently an O(N) operation. */
     public boolean hasKey(ECKey key) {
         lock.lock();
@@ -811,6 +825,7 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             lock.unlock();
         }
     }
+
     /**
      * Returns true if this wallet knows the script corresponding to the given hash
      */
@@ -3345,10 +3360,9 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             // Note that each input may be claiming an output sent to a different key. So we have to look at the outputs
             // to figure out which key to sign with.
 
-            Map<TransactionOutput, RedeemData> redeemData = new HashMap<TransactionOutput, RedeemData>();
             for (int i = 0; i < inputs.size(); i++) {
                 TransactionInput input = inputs.get(i);
-                TransactionOutput output = input.getOutpoint().getConnectedOutput();
+                TransactionOutput output = input.getConnectedOutput();
 
                 // We don't have the connected output, we assume it was signed already and move on
                 if (output == null) {
@@ -3368,53 +3382,38 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
                 if (input.getScriptBytes().length != 0)
                     log.warn("Re-signing an already signed transaction! Be sure this is what you want.");
 
-                redeemData.put(output, getDataRequiredToSpend(input.getOutpoint(), aesKey));
-            }
-
-            // nothing to sign
-            if (redeemData.size() == 0)
-                return;
-
-            TransactionSignature[][] signatures = null;
-            for (TransactionSigner signer : signers) {
-                try {
-                    log.debug("Trying out {} to sign tx.");
-                    signatures = signer.signInputs(tx, redeemData);
-                    break;
-                } catch (IllegalArgumentException e) {
-                    // nothing. Assuming signer is incompatible. Just proceed to the next signer
-                } catch (IllegalStateException e) {
-
-                }
-            }
-
-            if (signatures == null) {
-                throw new RuntimeException("No suitable TransactionSigner found");
-            }
-
-            // Now we have calculated each signature, go through and create the scripts. Reminder: the script consists:
-            // 1) For pay-to-address outputs: a signature (over a hash of the simplified transaction) and the complete
-            //    public key needed to sign for the connected output. The output script checks the provided pubkey hashes
-            //    to the address and then checks the signature.
-            // 2) For pay-to-key outputs: just a signature.
-            for (int i = 0; i < inputs.size(); i++) {
-                TransactionInput input = inputs.get(i);
-                final TransactionOutput connectedOutput = input.getOutpoint().getConnectedOutput();
-                if (!redeemData.containsKey(connectedOutput))
-                    continue;
-                checkNotNull(connectedOutput);  // Quiet static analysis: is never null here but cannot be statically proven
-                Script scriptPubKey = connectedOutput.getScriptPubKey();
+                Script scriptPubKey = output.getScriptPubKey();
+                RedeemData redeemData = getDataRequiredToSpend(input.getOutpoint(), aesKey);
+                checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", input.getOutpoint().getHash());
+                // Create empty scriptSig for each input. Reminder: the script consists:
+                // 1) For pay-to-address outputs: a signature (over a hash of the simplified transaction) and the complete
+                //    public key needed to sign for the connected output. The output script checks the provided pubkey hashes
+                //    to the address and then checks the signature.
+                // 2) For pay-to-key outputs: just a signature.
+                // 3) For pay-to-script-hash outputs: multiple signatures and redeem script
                 if (scriptPubKey.isSentToAddress()) {
-                    input.setScriptSig(ScriptBuilder.createInputScript(signatures[i][0], redeemData.get(connectedOutput).getKeys().get(0)));
+                    input.setScriptSig(ScriptBuilder.createEmptyInputScript(redeemData.getKeys().get(0)));
                 } else if (scriptPubKey.isSentToRawPubKey()) {
-                    input.setScriptSig(ScriptBuilder.createInputScript(signatures[i][0]));
+                    input.setScriptSig(ScriptBuilder.createEmptyInputScript());
                 } else if (scriptPubKey.isPayToScriptHash()) {
-                    Script redeemScript = redeemData.get(connectedOutput).getRedeemScript();
-                    input.setScriptSig(ScriptBuilder.createP2SHMultiSigInputScript(Arrays.asList(signatures[i]), redeemScript.getProgram()));
+                    Script redeemScript = redeemData.getRedeemScript();
+                    int treshold = redeemScript.getNumberOfSignaturesRequiredToSpend();
+                    input.setScriptSig(ScriptBuilder.createEmptyP2SHMultiSigInputScript(treshold, redeemScript.getProgram()));
                 } else {
                     // Should be unreachable - if we don't recognize the type of script we're trying to sign for, we should
                     // have failed above when fetching the key to sign with.
                     throw new RuntimeException("Do not understand script type: " + scriptPubKey);
+                }
+            }
+
+            for (TransactionSigner signer : signers) {
+                try {
+                    log.debug("Trying out {} to sign tx.");
+                    signer.signInputs(tx, aesKey);
+                } catch (IllegalArgumentException e) {
+                    // do nothing. Assuming signer is incompatible. Just proceed to the next signer
+                } catch (IllegalStateException e) {
+                    // do nothing. Assuming signer is incompatible. Just proceed to the next signer
                 }
             }
 

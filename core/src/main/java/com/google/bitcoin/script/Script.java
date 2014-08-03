@@ -266,8 +266,9 @@ public class Script {
         final byte[] chunk0data = chunk0.data;
         final ScriptChunk chunk1 = chunks.get(1);
         final byte[] chunk1data = chunk1.data;
-        if (chunk0data != null && chunk0data.length > 2 && chunk1data != null && chunk1data.length > 2) {
-            // If we have two large constants assume the input to a pay-to-address output.
+        if (chunk0data != null && chunk1data != null && chunk1data.length > 2) {
+            // If we have two constants assume the input to a pay-to-address output.
+            // first constant is either a signature or OP_0 for incomplete scripts with empty signatures
             return chunk1data;
         } else if (chunk1.equalsOpCode(OP_CHECKSIG) && chunk0data != null && chunk0data.length > 2) {
             // A large constant followed by an OP_CHECKSIG is the key.
@@ -275,6 +276,19 @@ public class Script {
         } else {
             throw new ScriptException("Script did not match expected form: " + toString());
         }
+    }
+
+    public List<byte[]> getPubKeys() throws ScriptException {
+        List<byte[]> pubKeys = new ArrayList<byte[]>();
+        if (isSentToMultiSig()) {
+            // Chunks are the following: <n> <pubkey> [pubkey..] <m> CHECKMULTISIG
+            for (int i = 1; i < chunks.size() - 2; i++) {
+                pubKeys.add(chunks.get(i).data);
+            }
+        } else {
+            pubKeys.add(getPubKey());
+        }
+        return pubKeys;
     }
 
     /**
@@ -297,6 +311,32 @@ public class Script {
             return Address.fromP2SHScript(params, this);
         else
             throw new ScriptException("Cannot cast this script to a pay-to-address type");
+    }
+
+    /**
+     * Returns copy of this script with OP_0 on given position replaced with signature
+     */
+    public Script addSignature(int pos, TransactionSignature sig, boolean isMultisig) {
+        ScriptBuilder builder = new ScriptBuilder();
+        Iterator<ScriptChunk> it = chunks.iterator();
+        int numChunks = 0;
+        // skip first OP_0 for multisig scripts
+        if (isMultisig)
+            builder.addChunk(it.next());
+        for (; it.hasNext(); ) {
+            ScriptChunk chunk = it.next();
+            // replace the first OP_0 with signature data
+            if (chunk.equalsOpCode(OP_0)) {
+                if (numChunks == pos)
+                    builder.data(sig.encodeToBitcoin());
+                else
+                    builder.addChunk(chunk);
+            } else {
+                builder.addChunk(chunk);
+            }
+            numChunks++;
+        }
+        return builder.build();
     }
 
     ////////////////////// Interface for writing scripts from scratch ////////////////////////////////

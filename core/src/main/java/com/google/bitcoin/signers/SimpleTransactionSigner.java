@@ -15,24 +15,35 @@
  */
 package com.google.bitcoin.signers;
 
-import com.google.bitcoin.core.*;
+import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.ScriptException;
+import com.google.bitcoin.core.Transaction;
+import com.google.bitcoin.core.TransactionInput;
+import com.google.bitcoin.crypto.DeterministicKey;
 import com.google.bitcoin.crypto.TransactionSignature;
+import com.google.bitcoin.script.Script;
+import com.google.bitcoin.wallet.MultisigKeyBag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.crypto.params.KeyParameter;
 
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.annotation.Nullable;
 
 /**
  * <p>{@link TransactionSigner} implementation for signing pay-to-address and pay-to-pubkey transaction inputs. It always
  * uses {@link com.google.bitcoin.core.Transaction.SigHash#ALL} signing mode.</p>
- *
+ * <p/>
  * <p>This class expects single key to be provided for each TransactionOutput, otherwise it will throw an exception
  * (as it isn't able to sign multisig or P2SH transaction inputs).
  */
-public class SimpleTransactionSigner implements TransactionSigner {
+public class SimpleTransactionSigner extends AbstractTransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(SimpleTransactionSigner.class);
+
+    private MultisigKeyBag keyBag;
+
+    public SimpleTransactionSigner(MultisigKeyBag keyBag) {
+        this.keyBag = keyBag;
+    }
 
     @Override
     public boolean isReady() {
@@ -46,33 +57,53 @@ public class SimpleTransactionSigner implements TransactionSigner {
     }
 
     @Override
-    public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
-        for (RedeemData constituent : redeemData.values()) {
-            checkArgument(constituent.getRedeemScript() == null, "SimpleTransactionSigner doesn't work with P2SH transactions");
-            checkArgument(constituent.getKeys().size() == 1, "SimpleTransactionSigner doesn't work with multisig transactions");
-        }
-
+    public void signInputs(Transaction tx, @Nullable KeyParameter aesKey) {
         int numInputs = tx.getInputs().size();
-        TransactionSignature[][] signatures = new TransactionSignature[numInputs][1];
         for (int i = 0; i < numInputs; i++) {
             TransactionInput txIn = tx.getInput(i);
-            TransactionOutput txOut = txIn.getOutpoint().getConnectedOutput();
-            if (!redeemData.containsKey(txOut))
+            if (txIn.getConnectedOutput() == null) {
+                log.warn("Missing connected output, assuming input {} is already signed.", i);
                 continue;
-            ECKey key = redeemData.get(txOut).getKeys().get(0);
-            byte[] connectedPubKeyScript = txIn.getOutpoint().getConnectedPubKeyScript();
+            }
             try {
-                signatures[i][0] = tx.calculateSignature(i, key, connectedPubKeyScript, Transaction.SigHash.ALL, false);
+                // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
+                // we sign missing pieces (to check this would require either assuming any signatures are signing
+                // standard output types or a way to get processed signatures out of script execution)
+                txIn.getScriptSig().correctlySpends(tx, i, txIn.getConnectedOutput().getScriptPubKey(), true);
+                log.warn("Input {} already correctly spends output, assuming SIGHASH type used will be safe and skipping signing.", i);
+                continue;
+            } catch (ScriptException e) {
+                // Expected.
+            }
+
+
+            ECKey key = txIn.getOutpoint().getConnectedKey(keyBag).maybeDecrypt(aesKey);
+            if (key == null)
+                continue;
+            boolean isP2SH = txIn.getConnectedOutput().getScriptPubKey().isPayToScriptHash();
+            Script inputScript = txIn.getScriptSig();
+            byte[] script;
+            if (isP2SH) {
+                script = getRedeemScript(inputScript).getProgram();
+            } else {
+                script = txIn.getOutpoint().getConnectedPubKeyScript();
+            }
+            TransactionSignature signature;
+            try {
+                signature = tx.calculateSignature(i, key, script, Transaction.SigHash.ALL, false);
+                int index = getKeyPosition(txIn, key, inputScript);
+                if (index < 0)
+                    throw new RuntimeException("Input script doesn't contain our key"); // This should not happen
+                inputScript = inputScript.addSignature(index, signature, isP2SH);
+                txIn.setScriptSig(inputScript);
+                if (key instanceof DeterministicKey)
+                    txIn.setDerivationPath(((DeterministicKey)key).getPath());
             } catch (ECKey.KeyIsEncryptedException e) {
                 throw e;
             } catch (ECKey.MissingPrivateKeyException e) {
-                // Create a dummy signature to ensure the transaction is of the correct size when we try to ensure
-                // the right fee-per-kb is attached. If the wallet doesn't have the privkey, the user is assumed to
-                // be doing something special and that they will replace the dummy signature with a real one later.
-                signatures[i][0] = TransactionSignature.dummy();
-                log.info("Used dummy signature for txIn {} due to failure during signing (most likely missing privkey)", i);
+                // do nothing. Assuming it will be signed by other TransactionSigner.
             }
         }
-        return signatures;
     }
+
 }

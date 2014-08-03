@@ -122,6 +122,30 @@ public class ScriptBuilder {
         return new ScriptBuilder().data(signature.encodeToBitcoin()).build();
     }
 
+    /** Creates an empty scriptSig that, once filled with signature, can redeem a pay-to-address output.
+     * Instead of the signature resulting script has OP_0.
+     * Having incomplete input script allows to pass around partially signed tx.
+     * It is expected that this program later on will be updated with proper signature,
+     * e.g. by {@link Script#addSignature(com.google.bitcoin.crypto.TransactionSignature)} call or by a third-party
+     * {@link com.google.bitcoin.signers.TransactionSigner}.
+     * */
+    public static Script createEmptyInputScript(ECKey pubKey) {
+        byte[] pubkeyBytes = pubKey.getPubKey();
+        return new ScriptBuilder().smallNum(0).data(pubkeyBytes).build();
+    }
+
+    /** Creates an empty scriptSig that, once filled with signature, can redeem a pay-to-pubkey output.
+     * Instead of the signature resulting script has OP_0.
+     * Having incomplete input script allows to pass around partially signed tx.
+     * It is expected that this program later on will be updated with proper signature,
+     * e.g. by {@link Script#addSignature(com.google.bitcoin.crypto.TransactionSignature)} call or by a third-party
+     * {@link com.google.bitcoin.signers.TransactionSigner}.
+     * */
+    public static Script createEmptyInputScript() {
+        return new ScriptBuilder().smallNum(0).build();
+    }
+
+
     /** Creates a program that requires at least N of the given keys to sign, using OP_CHECKMULTISIG. */
     public static Script createMultiSigOutputScript(int threshold, List<ECKey> pubkeys) {
         checkArgument(threshold > 0);
@@ -161,7 +185,26 @@ public class ScriptBuilder {
         return createMultiSigInputScriptBytes(sigs, multisigProgramBytes);
     }
 
-    /** 
+    /**
+     * Creates an empty scriptSig that, once filled with signatures, can satisfy pay-to-script hashed OP_CHECKMULTISIG program.
+     * Instead of the signatures resulting script has OP_0.
+     * Having incomplete input script allows to pass around partially signed tx.
+     * It is expected that this program later on will be updated with proper signatures,
+     * e.g. by {@link Script#addSignature(com.google.bitcoin.crypto.TransactionSignature)} call or by a third-party
+     * {@link com.google.bitcoin.signers.TransactionSigner}.
+     */
+    public static Script createEmptyP2SHMultiSigInputScript(int treshold, byte[] multisigProgramBytes) {
+        checkArgument(treshold <= 16);
+        ScriptBuilder builder = new ScriptBuilder();
+        builder.smallNum(0);  // Work around a bug in CHECKMULTISIG that is now a required part of the protocol.
+        for (int i = 0; i < treshold; i++)
+            builder.smallNum(0);
+        if (multisigProgramBytes!= null)
+            builder.data(multisigProgramBytes);
+        return builder.build();
+    }
+
+    /**
      * Create a program that satisfies an OP_CHECKMULTISIG program, using pre-encoded signatures. 
      * Optionally, appends the script program bytes if spending a P2SH output.
      */

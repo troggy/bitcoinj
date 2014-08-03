@@ -15,12 +15,11 @@
  */
 package com.google.bitcoin.signers;
 
-import com.google.bitcoin.core.RedeemData;
 import com.google.bitcoin.core.Transaction;
-import com.google.bitcoin.core.TransactionOutput;
-import com.google.bitcoin.crypto.TransactionSignature;
+import com.google.bitcoin.wallet.KeyBag;
+import org.spongycastle.crypto.params.KeyParameter;
 
-import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * <p>Implementations of this interface provide signatures for given transaction.</p>
@@ -33,11 +32,14 @@ public interface TransactionSigner {
      */
     boolean isReady();
 
+    /**
+     * Returns byte array of data representing state of this signer
+     */
     byte[] serialize();
 
     /**
-     * Returns array of signatures for given transaction's inputs. Resulting array is made two-dimensional (array of tuples)
-     * to facilitate signing of P2SH inputs.
+     * Signs given transaction's inputs. Signer may locate needed local keys through provided {@link KeyBag}
      */
-    TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData);
+    void signInputs(Transaction tx, @Nullable KeyParameter aesKey);
+
 }

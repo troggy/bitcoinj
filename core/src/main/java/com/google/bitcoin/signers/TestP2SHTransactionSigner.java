@@ -17,7 +17,9 @@ package com.google.bitcoin.signers;
 
 import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.Sha256Hash;
+import com.google.bitcoin.crypto.ChildNumber;
 import com.google.bitcoin.crypto.DeterministicKey;
+import com.google.bitcoin.crypto.HDUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +40,7 @@ import java.util.Map;
  * to provide signature. Mock server is an instance of https://github.com/troggy/bitcoinj-test-signer running on
  * localhost at port 8080.
  */
-public class TestP2SHTransactionSigner extends P2SHTransactionSigner {
+public class TestP2SHTransactionSigner extends CustomTransactionSigner {
     private static final Logger log = LoggerFactory.getLogger(TestP2SHTransactionSigner.class);
 
     public DeterministicKey getPartnerWatchKey() {
@@ -53,12 +56,12 @@ public class TestP2SHTransactionSigner extends P2SHTransactionSigner {
     }
 
     @Override
-    protected ECKey.ECDSASignature getTheirSignature(Sha256Hash sighash, ECKey theirKey) {
+    protected SignatureAndKey getSignature(Sha256Hash sighash, List<ChildNumber> derivationPath) {
         Map<String, String> params = new HashMap<String, String>();
         params.put("sighash", sighash.toString());
-        params.put("keypath", ((DeterministicKey) theirKey).getPathAsString());
+        params.put("keypath", HDUtils.formatPath(derivationPath));
         byte[] sig = new HttpClient().request("POST", "http://localhost:8080/signer/sign", params);
-        return ECKey.ECDSASignature.decodeFromDER(sig);
+        return new SignatureAndKey(ECKey.ECDSASignature.decodeFromDER(sig), null);
     }
 
     class HttpClient {

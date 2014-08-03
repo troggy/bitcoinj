@@ -24,7 +24,6 @@ import com.google.bitcoin.params.MainNetParams;
 import com.google.bitcoin.params.TestNet3Params;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.junit.Assert;
@@ -34,11 +33,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static com.google.bitcoin.core.Utils.HEX;
 import static com.google.bitcoin.script.ScriptOpCodes.OP_INVALIDOPCODE;
@@ -151,6 +146,13 @@ public class ScriptTest {
         // multisig script
         scriptChunk = inputScript.getChunks().get(inputScript.getChunks().size() - 1);
         Assert.assertThat(scriptChunk.data, IsNot.not(IsEqual.equalTo(multisigScript.getProgram())));
+
+        // create empty P2SH multisig input script (2 sigs to satisfy)
+        inputScript = ScriptBuilder.createEmptyP2SHMultiSigInputScript(2, multisigScript.getProgram());
+        // Assert that script has 4 chunks and second and third chunks are empty (sig placeholders)
+        assertTrue(inputScript.getChunks().size() == 4);
+        assertEquals(ScriptOpCodes.OP_0, inputScript.getChunks().get(1).opcode);
+        assertEquals(ScriptOpCodes.OP_0, inputScript.getChunks().get(1).opcode);
     }
     
     private Script parseScriptString(String string) throws Exception {

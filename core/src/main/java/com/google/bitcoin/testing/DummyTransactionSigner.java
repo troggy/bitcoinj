@@ -15,13 +15,12 @@
  */
 package com.google.bitcoin.testing;
 
-import com.google.bitcoin.core.RedeemData;
 import com.google.bitcoin.core.Transaction;
-import com.google.bitcoin.core.TransactionOutput;
-import com.google.bitcoin.crypto.TransactionSignature;
 import com.google.bitcoin.signers.TransactionSigner;
+import com.google.bitcoin.wallet.MultisigKeyBag;
+import org.spongycastle.crypto.params.KeyParameter;
 
-import java.util.Map;
+import javax.annotation.Nullable;
 
 public class DummyTransactionSigner implements TransactionSigner {
     private boolean isReady;
@@ -43,7 +42,6 @@ public class DummyTransactionSigner implements TransactionSigner {
     }
 
     @Override
-    public TransactionSignature[][] signInputs(Transaction tx, Map<TransactionOutput, RedeemData> redeemData) {
-        return new TransactionSignature[0][];
+    public void signInputs(Transaction t, @Nullable KeyParameter aesKey) {
     }
 }

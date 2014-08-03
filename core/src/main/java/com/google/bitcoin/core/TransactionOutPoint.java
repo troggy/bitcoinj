@@ -17,7 +17,7 @@
 package com.google.bitcoin.core;
 
 import com.google.bitcoin.script.Script;
-import com.google.bitcoin.wallet.KeyBag;
+import com.google.bitcoin.wallet.MultisigKeyBag;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -140,7 +140,7 @@ public class TransactionOutPoint extends ChildMessage implements Serializable {
      * @return an ECKey or null if the connected key cannot be found in the wallet.
      */
     @Nullable
-    public ECKey getConnectedKey(KeyBag keyBag) throws ScriptException {
+    public ECKey getConnectedKey(MultisigKeyBag keyBag) throws ScriptException {
         TransactionOutput connectedOutput = getConnectedOutput();
         checkNotNull(connectedOutput, "Input is not connected so cannot retrieve key");
         Script connectedScript = connectedOutput.getScriptPubKey();
@@ -150,6 +150,9 @@ public class TransactionOutPoint extends ChildMessage implements Serializable {
         } else if (connectedScript.isSentToRawPubKey()) {
             byte[] pubkeyBytes = connectedScript.getPubKey();
             return keyBag.findKeyFromPubKey(pubkeyBytes);
+        } else if (connectedScript.isPayToScriptHash()) {
+            byte[] scriptHash = connectedScript.getPubKeyHash();
+            return keyBag.findPrivateKeyFromScriptHash(scriptHash);
         } else {
             throw new ScriptException("Could not understand form of connected output script: " + connectedScript);
         }

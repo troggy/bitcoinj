@@ -17,6 +17,7 @@
 
 package com.google.bitcoin.core;
 
+import com.google.bitcoin.crypto.ChildNumber;
 import com.google.bitcoin.script.Script;
 
 import javax.annotation.Nullable;
@@ -26,6 +27,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkElementIndex;
@@ -60,6 +62,9 @@ public class TransactionInput extends ChildMessage implements Serializable {
     private final Coin value;
     // A pointer to the transaction that owns this input.
     private final Transaction parentTransaction;
+
+    // derivation path used to get the key for signing this input
+    private List<ChildNumber> derivationPath;
 
     /**
      * Creates an input that connects to nothing - used only in creation of coinbase transactions.
@@ -445,6 +450,14 @@ public class TransactionInput extends ChildMessage implements Serializable {
     /** Returns a copy of the input detached from its containing transaction, if need be. */
     public TransactionInput duplicateDetached() {
         return new TransactionInput(params, null, bitcoinSerialize(), 0);
+    }
+
+    public List<ChildNumber> getDerivationPath() {
+        return derivationPath;
+    }
+
+    public void setDerivationPath(List<ChildNumber> derivationPath) {
+        this.derivationPath = derivationPath;
     }
 
     @Override

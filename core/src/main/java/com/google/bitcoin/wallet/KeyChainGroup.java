@@ -63,7 +63,7 @@ import static com.google.common.base.Preconditions.*;
  * <p>Deterministic key chains have a concept of a lookahead size and threshold. Please see the discussion in the
  * class docs for {@link com.google.bitcoin.wallet.DeterministicKeyChain} for more information on this topic.</p>
  */
-public class KeyChainGroup {
+public class KeyChainGroup implements MultisigKeyBag {
     private static final Logger log = LoggerFactory.getLogger(KeyChainGroup.class);
 
     private BasicKeyChain basic;
@@ -422,15 +422,17 @@ public class KeyChainGroup {
     }
 
     /**
-     * <p>Returns redeem data (redeem script and corresponding keys) for the given scriptPubKey hash.
-     * Returns null if no such script found
+     * Returns redeem data (redeem script and corresponding keys) for the given script hash.
+     *
+     * Returns null if no such data found
      */
     @Nullable
-    public RedeemData findRedeemDataFromPubHash(byte[] payToScriptHash) {
-        return marriedKeysScripts.get(ByteString.copyFrom(payToScriptHash));
+    public RedeemData findRedeemDataFromPubHash(byte[] scriptHash) {
+        return marriedKeysScripts.get(ByteString.copyFrom(scriptHash));
     }
 
     @Nullable
+    @Override
     public ECKey findKeyFromPubHash(byte[] pubkeyHash) {
         ECKey result;
         if ((result = basic.findKeyFromPubHash(pubkeyHash)) != null)
@@ -438,6 +440,23 @@ public class KeyChainGroup {
         for (DeterministicKeyChain chain : chains) {
             if ((result = chain.findKeyFromPubHash(pubkeyHash)) != null)
                 return result;
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public ECKey findPrivateKeyFromScriptHash(byte[] scriptHash) {
+        RedeemData redeemData = findRedeemDataFromPubHash(scriptHash);
+        if (redeemData == null)
+            return null;
+        for (ECKey key : redeemData.getKeys()) {
+            try {
+                if (key.getPrivKey() != null)
+                    return key;
+            } catch (IllegalStateException e) {
+                // no private bytes. Proceed to the next key
+            }
         }
         return null;
     }
@@ -478,6 +497,7 @@ public class KeyChainGroup {
     }
 
     @Nullable
+    @Override
     public ECKey findKeyFromPubKey(byte[] pubkey) {
         ECKey result;
         if ((result = basic.findKeyFromPubKey(pubkey)) != null)
